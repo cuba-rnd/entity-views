@@ -36,6 +36,9 @@ cuba {
     tomcat {
         dir = "$project.rootDir/deploy/tomcat"
     }
+    ide {
+        vcs = 'Git'
+    }
 }
 
 dependencies {
