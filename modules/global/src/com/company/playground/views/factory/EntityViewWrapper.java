@@ -39,7 +39,7 @@ public class EntityViewWrapper {
             if (baseEntityViewMethods.contains(method)) {
                 if ("getOrigin".equals(method.getName()))
                     return entity;
-                //TODO implement transform
+                //TODO implement transform()
                 throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", method.getName()));
             }
 

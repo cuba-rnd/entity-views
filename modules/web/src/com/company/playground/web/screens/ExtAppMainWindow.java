@@ -10,10 +10,6 @@ public class ExtAppMainWindow extends AppMainWindow {
     @Inject
     private ScanService scanService;
 
-    public void runScan() {
-        scanService.runScan();
-    }
-
     public void onCheckProxyBtnClick() {
          scanService.checkProxy();
     }

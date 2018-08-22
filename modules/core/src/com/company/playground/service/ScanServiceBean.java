@@ -23,18 +23,6 @@ public class ScanServiceBean implements ScanService {
     @Inject
     private DataManager dataManager;
 
-
-    @Override
-    public void runScan() {
-        try {
-
-            conf.scan();
-
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void checkProxy() {
         User user = dataManager.load(User.class).list().get(0);
