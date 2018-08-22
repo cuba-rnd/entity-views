@@ -35,15 +35,20 @@ public class EntityViewWrapper {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
 
-            //TODO implement separately
-            if (baseEntityViewMethods.contains(method))
-                return null;
+
+            if (baseEntityViewMethods.contains(method)) {
+                if ("getOrigin".equals(method.getName()))
+                    return entity;
+                //TODO implement transform
+                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", method.getName()));
+            }
 
             //TODO check and implement setters
 
             Method entityMethod = entity.getClass().getMethod(method.getName(), method.getParameterTypes());
 
-            if (Entity.class.isAssignableFrom(entityMethod.getReturnType())){
+            if (Entity.class.isAssignableFrom(entityMethod.getReturnType())
+                    && BaseEntityView.class.isAssignableFrom(method.getReturnType())){
                 Entity e = (Entity) entityMethod.invoke(entity, args);
                 //noinspection unchecked
                 return wrap(e, (Class) method.getReturnType());

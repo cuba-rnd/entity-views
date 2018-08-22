@@ -46,6 +46,7 @@ public class ScanServiceBean implements ScanService {
                 .view(conf.getViewInterfaceDefinitions().get(SampleWithUserView.class).getView())
                 .list().get(0);
         SampleWithUserView swu = EntityViewWrapper.wrap(se, SampleWithUserView.class);
-        log.info("{}", swu.getUser().getLogin());
+        log.info("{}, {}", swu.getName(), swu.getUser().getName());
+        log.info("{}, {}", swu.getOrigin(), swu.getUser().getOrigin());
     }
 }
