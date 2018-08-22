@@ -12,9 +12,14 @@
                 <main:initialLayout>
                     <groupBox caption="scan"
                               spacing="true">
-                        <button id="runScanBtn"
-                                caption="Run Scan"
-                                invoke="runScan"/>
+                        <hbox spacing="true">
+                            <button id="runScanBtn"
+                                    caption="Run Scan"
+                                    invoke="runScan"/>
+                            <button id="checkProxyBtn"
+                                    caption="Check Proxy"
+                                    invoke="onCheckProxyBtnClick"/>
+                        </hbox>
                     </groupBox>
                 </main:initialLayout>
             </main:workArea>

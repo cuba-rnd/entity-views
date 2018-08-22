@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <views xmlns="http://schemas.haulmont.com/cuba/view.xsd">
-
+    <view class="com.company.playground.entity.SampleEntity"
+          extends="_local"
+          name="sample-entity-editor-view">
+        <property name="user"
+                  view="_minimal"/>
+    </view>
 </views>

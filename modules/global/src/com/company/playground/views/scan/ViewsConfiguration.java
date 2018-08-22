@@ -13,7 +13,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ResourceLoader;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -57,6 +56,7 @@ public class ViewsConfiguration {
         //create views for the detected view interfaces
         for (Class<BaseEntityView> baseEntityViewClass : viewInterfaceDefinitions.keySet())
             composeView(baseEntityViewClass);
+        log.trace("Scanning views successfully completed", packages);
     }
 
     protected Class<BaseEntityView> extractViewInterface(BeanDefinition beanDefinition) throws ViewInitializationException {
@@ -245,7 +245,7 @@ public class ViewsConfiguration {
 
         public String getViewName() {
             String name = viewInterface.getAnnotation(EntityView.class).name();
-            return name.equals(StringUtils.EMPTY) ? viewInterface.getName() : name;
+            return name.equals(StringUtils.EMPTY) ? viewInterface.getSimpleName() : name;
         }
     }
 }

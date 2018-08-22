@@ -5,4 +5,6 @@ public interface ScanService {
     String NAME = "playground_ScanService";
 
     void runScan();
+
+    void checkProxy();
 }

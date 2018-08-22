@@ -13,4 +13,8 @@ public class ExtAppMainWindow extends AppMainWindow {
     public void runScan() {
         scanService.runScan();
     }
+
+    public void onCheckProxyBtnClick() {
+         scanService.checkProxy();
+    }
 }
