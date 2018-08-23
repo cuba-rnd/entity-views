@@ -12,7 +12,12 @@ import com.company.playground.views.scan.EntityView;
 public interface SampleMinimalView extends BaseEntityView<SampleEntity> {
 
     String getName();
-
     void setName(String name);
+
+// TODO support default interface methods
+//    @MetaProperty
+//    default Double getRandomNumber() {
+//        return new Random().nextDouble();
+//    }
 
 }
