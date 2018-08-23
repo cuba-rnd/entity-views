@@ -35,7 +35,6 @@ public class EntityViewWrapper {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
 
-
             if (baseEntityViewMethods.contains(method)) {
                 if ("getOrigin".equals(method.getName()))
                     return entity;

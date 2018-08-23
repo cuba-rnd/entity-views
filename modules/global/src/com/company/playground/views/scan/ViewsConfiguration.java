@@ -195,12 +195,9 @@ public class ViewsConfiguration {
         return applicationContext;
     }
 
-    /**
-     *
-     * @return Returns a map of detected view interfaces
-     */
-    public Map<Class<BaseEntityView>, ViewInterfaceInfo> getViewInterfaceDefinitions() {
-        return Collections.unmodifiableMap(viewInterfaceDefinitions);
+    public View getViewByInterface(Class<? extends BaseEntityView> intf) {
+        //noinspection SuspiciousMethodCalls
+        return viewInterfaceDefinitions.get(intf).getView();
     }
 
     /**

@@ -31,7 +31,7 @@ public class ScanServiceBean implements ScanService {
         log.info("{}, {}", userMinimal.getLogin(), userMinimal.getName());
 
         SampleEntity se = dataManager.load(SampleEntity.class)
-                .view(conf.getViewInterfaceDefinitions().get(SampleWithUserView.class).getView())
+                .view(conf.getViewByInterface(SampleWithUserView.class))
                 .list().get(0);
         SampleWithUserView swu = EntityViewWrapper.wrap(se, SampleWithUserView.class);
         log.info("{}, {}", swu.getName(), swu.getUser().getName());
