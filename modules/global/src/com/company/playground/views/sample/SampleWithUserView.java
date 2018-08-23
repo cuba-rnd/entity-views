@@ -9,9 +9,10 @@ import com.haulmont.cuba.security.entity.User;
 @EntityView
 public interface SampleWithUserView extends SampleMinimalView {
     UserMinimalView getUser();
-    void setUser(User val);
-    //TODO decide about additional setter?
     void setUser(UserMinimalView val);
+
+    //TODO decide about additional setter?
+    void setUser(User val);
 
     @EntityView(name = UserMinimalView.NAME)
     interface UserMinimalView extends BaseEntityView<User>{

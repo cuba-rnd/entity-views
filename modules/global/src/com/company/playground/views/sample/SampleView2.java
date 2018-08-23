@@ -11,6 +11,4 @@ public interface SampleView2 {
 
     SampleMinimalView getSampleEntity();
 
-    //TODO check inner interface definitions
-
 }
