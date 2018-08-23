@@ -1,13 +1,13 @@
 package com.company.playground.views.scan;
 
 import com.company.playground.views.sample.BaseEntityView;
-import org.apache.commons.lang.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 
 /**
  * Created by Aleksey Stukalov on 16/08/2018.
@@ -16,35 +16,19 @@ public class ViewCandidateProvider extends ClassPathScanningCandidateComponentPr
 
     private static final Logger log = LoggerFactory.getLogger(ViewCandidateProvider.class);
 
-    public ViewCandidateProvider() {
+    public ViewCandidateProvider(ResourceLoader resourceLoader) {
         super(false);
-        addIncludeFilter(new AnnotationTypeFilter(EntityView.class, false, true));
+        addIncludeFilter(new AssignableTypeFilter(BaseEntityView.class));
+        addExcludeFilter(new AnnotationTypeFilter(AbstractEntityView.class));
+        setResourceLoader(resourceLoader);
     }
 
     @Override
     protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
-        return beanDefinition.getMetadata().isInterface()
-                && beanDefinition.getMetadata().isIndependent()
-                && isImplementBaseEntityViewInterface(beanDefinition);
-    }
-
-    //View interface must extend BaseEntityView
-    protected boolean isImplementBaseEntityViewInterface(BeanDefinition beanDefinition) {
-        Class<?> viewInterface;
-        try {
-            viewInterface = ClassUtils.getClass(beanDefinition.getBeanClassName());
-
-        } catch (ClassNotFoundException e) {
-            log.error("Interface was not found for {}", beanDefinition.getBeanClassName());
-            return false;
-        }
-
-        if (BaseEntityView.class.isAssignableFrom(viewInterface)) {
-            return true;
-        } else {
-            log.error("Interface {} is annotated as @EntityView, but doesn't extend {}"
-                    , beanDefinition.getBeanClassName(), BaseEntityView.class.getName());
-            return false;
-        }
+        log.trace("Trying: "+beanDefinition.getBeanClassName());
+        boolean isCandidate = beanDefinition.getMetadata().isInterface()
+                && beanDefinition.getMetadata().isIndependent();
+        log.trace(beanDefinition.getBeanClassName()+" Candidate: "+isCandidate);
+        return isCandidate;
     }
 }

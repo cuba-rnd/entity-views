@@ -3,7 +3,8 @@ package com.company.playground.views.scan.exception;
 /**
  * Created by Aleksey Stukalov on 16/08/2018.
  */
-public class ViewInitializationException extends Throwable {
+public class ViewInitializationException extends RuntimeException {
+
     public ViewInitializationException() {
     }
 

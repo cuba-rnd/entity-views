@@ -1,12 +1,11 @@
 package com.company.playground.views.sample;
 
-import com.company.playground.views.scan.EntityView;
+import com.company.playground.views.scan.EntityViewName;
 import com.haulmont.cuba.security.entity.User;
 
 /**
  * Created by Aleksey Stukalov on 16/08/2018.
  */
-@EntityView
 public interface SampleWithUserView extends SampleMinimalView {
     UserMinimalView getUser();
     void setUser(UserMinimalView val);
@@ -14,7 +13,7 @@ public interface SampleWithUserView extends SampleMinimalView {
     //TODO decide about additional setter?
     void setUser(User val);
 
-    @EntityView(name = UserMinimalView.NAME)
+    @EntityViewName(name = UserMinimalView.NAME)
     interface UserMinimalView extends BaseEntityView<User>{
         String NAME = "user-minimal-view";
 
