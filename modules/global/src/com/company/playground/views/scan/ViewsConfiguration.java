@@ -151,10 +151,10 @@ public class ViewsConfiguration {
 
         public String getViewName() {
             EntityViewName annotation = viewInterface.getAnnotation(EntityViewName.class);
-            if ((annotation == null) || (StringUtils.isEmpty(annotation.name()))) {
+            if ((annotation == null) || (StringUtils.isEmpty(annotation.value()))) {
                 return viewInterface.getSimpleName();
             }
-            return annotation.name();
+            return annotation.value();
         }
     }
 }
