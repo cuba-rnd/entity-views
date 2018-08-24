@@ -29,12 +29,13 @@ import java.util.stream.Collectors;
 public class ViewsConfigurationParser implements BeanDefinitionParser {
 
     private static final Logger log = LoggerFactory.getLogger(ViewsConfigurationParser.class);
+    public static final String BASE_PACKAGES = "base-packages";
 
     @Override
     public BeanDefinition parse(Element element, ParserContext parserContext) {
 
         BeanDefinitionRegistry registry = parserContext.getRegistry();
-        String attribute = element.getAttribute("base-packages");
+        String attribute = element.getAttribute(BASE_PACKAGES);
         String[] packages = StringUtils.delimitedListToStringArray(attribute, ",", " ");
 
         log.trace("Scanning views in packages {}", Arrays.toString(packages));
