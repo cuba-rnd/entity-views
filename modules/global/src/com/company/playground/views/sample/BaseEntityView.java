@@ -10,6 +10,7 @@ import java.io.Serializable;
  */
 @AbstractEntityView
 public interface BaseEntityView<T extends Entity> extends Serializable {
+
     T getOrigin();
 
     BaseEntityView<T> transform(BaseEntityView<T> targetView);

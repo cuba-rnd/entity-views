@@ -3,6 +3,7 @@ package com.company.playground.views.scan;
 import com.company.playground.views.sample.BaseEntityView;
 import com.company.playground.views.scan.exception.ViewInitializationException;
 import com.google.common.collect.ImmutableSet;
+import com.haulmont.chile.core.annotations.MetaProperty;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
 import org.apache.commons.lang.StringUtils;
@@ -38,7 +39,14 @@ public class ViewsConfiguration {
         this.lazyViewMap = new ConcurrentHashMap<>(viewInterfaceDefinitions.keySet().size());
     }
 
+    private static boolean isMethodCandidate(Method m) {
+        return (m.getReturnType() != Void.TYPE) &&
+                (m.getDeclaredAnnotation(MetaProperty.class) == null);
+    }
+
     private ViewInterfaceInfo composeView(Class<? extends BaseEntityView> viewInterface, Set<String> visited) throws ViewInitializationException {
+
+        log.trace("Creating view for: {}", viewInterface.getName());
 
         ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
         //Preventing cyclic reference
@@ -51,7 +59,7 @@ public class ViewsConfiguration {
         Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
         //compose view only by getters
         //TODO check methods to have delegatable method in entity (if returns another view interface check that the entity has a reference to another entity)
-        Set<Method> viewInterfaceMethods = Arrays.stream(viewInterface.getMethods()).filter((m) -> (m.getReturnType() != Void.TYPE)).collect(Collectors.toSet());
+        Set<Method> viewInterfaceMethods = Arrays.stream(viewInterface.getMethods()).filter(ViewsConfiguration::isMethodCandidate).collect(Collectors.toSet());
         // skip utility methods from BaseEntityView
         viewInterfaceMethods.removeAll(baseEntityViewMethods);
 
@@ -59,8 +67,10 @@ public class ViewsConfiguration {
         View result = new View(viewInterfaceInfo.getEntityClass(), viewInterfaceInfo.getViewName());
         viewInterfaceInfo.setView(result);
 
-        for (Method viewMethod : viewInterfaceMethods) {
-            // refers an entity with a certain view
+        log.trace("View for: {} is created: {}", viewInterface.getName(), result);
+
+        viewInterfaceMethods.forEach(viewMethod -> {
+            log.trace("Checking is a method {} refers an entity with a certain view", viewMethod);
             if (BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType())) {
                 //noinspection unchecked
                 Class<BaseEntityView> fieldViewInterface = (Class<BaseEntityView>) viewMethod.getReturnType();
@@ -80,8 +90,7 @@ public class ViewsConfiguration {
             } else {
                 addProperty(result, methodName2FieldName(viewMethod), null);
             }
-
-        }
+        });
         return viewInterfaceInfo;
     }
 
