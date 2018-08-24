@@ -7,7 +7,9 @@ import com.haulmont.cuba.security.entity.User;
  * Created by Aleksey Stukalov on 16/08/2018.
  */
 public interface SampleWithUserView extends SampleMinimalView {
+
     UserMinimalView getUser();
+
     void setUser(UserMinimalView val);
 
     //TODO decide about additional setter?

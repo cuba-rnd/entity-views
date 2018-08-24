@@ -8,7 +8,7 @@
     <dsContext>
         <groupDatasource id="sampleEntitiesDs"
                          class="com.company.playground.entity.SampleEntity"
-                         view="_local">
+                         view="sampleEntity-browse-view">
             <query>
                 <![CDATA[select e from playground$SampleEntity e]]>
             </query>
@@ -32,6 +32,7 @@
             </actions>
             <columns>
                 <column id="name"/>
+                <column id="parent"/>
             </columns>
             <rows datasource="sampleEntitiesDs"/>
             <rowsCount/>
