@@ -2,6 +2,7 @@ package com.company.playground.views.scan;
 
 import com.company.playground.views.sample.BaseEntityView;
 import com.company.playground.views.scan.exception.ViewInitializationException;
+import com.google.common.collect.ImmutableSet;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
 import org.apache.commons.lang.StringUtils;
@@ -12,6 +13,7 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,24 +38,28 @@ public class ViewsConfiguration {
         this.lazyViewMap = new ConcurrentHashMap<>(viewInterfaceDefinitions.keySet().size());
     }
 
-    private ViewInterfaceInfo composeView(Class<? extends BaseEntityView> viewInterface) throws ViewInitializationException {
+    private ViewInterfaceInfo composeView(Class<? extends BaseEntityView> viewInterface, Set<String> visited) throws ViewInitializationException {
 
         ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
-
-        View result = new View(viewInterfaceInfo.getEntityClass(), viewInterfaceInfo.getViewName());
+        //Preventing cyclic reference
+        if (visited.contains(viewInterface.getName())) {
+            throw new ViewInitializationException(String.format("Cyclic dependencies in views. Offending view: %s , Parent views: %s"
+                    , viewInterface.getName()
+                    , String.join(",", visited)));
+        }
 
         Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
-        for (Method viewMethod : viewInterface.getMethods()) {
-            // skip this utility methods from BaseEntityView
-            if (baseEntityViewMethods.contains(viewMethod))
-                continue;
+        //compose view only by getters
+        //TODO check methods to have delegatable method in entity (if returns another view interface check that the entity has a reference to another entity)
+        Set<Method> viewInterfaceMethods = Arrays.stream(viewInterface.getMethods()).filter((m) -> (m.getReturnType() != Void.TYPE)).collect(Collectors.toSet());
+        // skip utility methods from BaseEntityView
+        viewInterfaceMethods.removeAll(baseEntityViewMethods);
 
-            //TODO check methods to have delegatable method in entity (if returns another view interface check that the entity has a reference to another entity)
 
-            //compose view only by getters
-            if (viewMethod.getReturnType() == Void.TYPE)
-                continue;
+        View result = new View(viewInterfaceInfo.getEntityClass(), viewInterfaceInfo.getViewName());
+        viewInterfaceInfo.setView(result);
 
+        for (Method viewMethod : viewInterfaceMethods) {
             // refers an entity with a certain view
             if (BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType())) {
                 //noinspection unchecked
@@ -66,9 +72,8 @@ public class ViewsConfiguration {
                                     , viewInterface.getName()
                                     , fieldViewInterface.getName()));
 
-                //TODO check cyclic references (check corner case when view refers itself as a field - is it a case at all?)
-
-                View refFieldView = composeView(refFieldInterfaceInfo.getViewInterface()).getView();
+                Set<String> parents = ImmutableSet.<String>builder().addAll(visited).add(viewInterface.getName()).build();
+                View refFieldView = composeView(refFieldInterfaceInfo.getViewInterface(), parents).getView();
                 refFieldInterfaceInfo.setView(refFieldView);
 
                 addProperty(result, methodName2FieldName(viewMethod), refFieldView);
@@ -77,7 +82,6 @@ public class ViewsConfiguration {
             }
 
         }
-        viewInterfaceInfo.setView(result);
         return viewInterfaceInfo;
     }
 
@@ -114,7 +118,7 @@ public class ViewsConfiguration {
         if (key == null) {
             throw new ViewInitializationException(String.format("View interface %s is not registered in ViewsConfiguration", viewInterface.getName()));
         }
-        return lazyViewMap.computeIfAbsent(key, (intface) -> composeView(viewInterface).getView());
+        return lazyViewMap.computeIfAbsent(key, (intface) -> composeView(viewInterface, Collections.emptySet()).getView());
     }
 
     /**

@@ -19,6 +19,7 @@
             <column width="250px">
                 <field property="name"/>
                 <field property="user"/>
+                <field property="parent"/>
             </column>
         </fieldGroup>
         <frame id="windowActions"
