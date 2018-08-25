@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -47,26 +48,27 @@ public class EntityViewWrapper {
         public Object invoke(Object proxy, Method method, Object[] args)
                 throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
+            final String methodName = method.getName();
+            final Class<?>[] parameterTypes = method.getParameterTypes();
+
             //Check if we should execute base interface method
-            Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods())
-                    .filter((m) -> m.getName().equals(method.getName()))
-                    .collect(Collectors.toSet());
+            Set<Method> baseEntityViewMethods = getMethodCandidates(methodName, parameterTypes, BaseEntityView.class);
             if (CollectionUtils.isNotEmpty(baseEntityViewMethods)) {
-                if ("getOrigin".equals(method.getName())) {
+                log.trace("Invoking method {} from BaseEntityView", methodName);
+                if ("getOrigin".equals(methodName)) {
                     return entity;
                 }
                 //TODO implement transform()
-                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", method.getName()));
+                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", methodName));
             }
 
             //TODO check and implement setters
 
             //Check if we should execute entity method
-            Set<Method> entityMethods = Arrays.stream(entity.getClass().getMethods())
-                    .filter((m) -> m.getName().equals(method.getName()))
-                    .collect(Collectors.toSet());
+            Set<Method> entityMethods = getMethodCandidates(methodName, parameterTypes, entity.getClass());
             if (CollectionUtils.isNotEmpty(entityMethods)) {
-                Method entityMethod = entity.getClass().getMethod(method.getName(), method.getParameterTypes());
+                log.trace("Invoking method {} from Entity class: {} name: {}", methodName, entity.getClass(), entity.getInstanceName());
+                Method entityMethod = entity.getClass().getMethod(methodName, method.getParameterTypes());
                 Object result = entityMethod.invoke(entity, args);
                 return wrapResult(method, entityMethod, result);
             }
@@ -74,17 +76,29 @@ public class EntityViewWrapper {
             //It is an interface default method - should be executed
             //TODO issues with calling default methods using reflection
             // @see https://blog.jooq.org/2018/03/28/correct-reflective-access-to-interface-default-methods-in-java-8-9-10/
-            Method interfaceMethod = viewInterface.getMethod(method.getName(), method.getParameterTypes());
+            Method interfaceMethod = viewInterface.getMethod(methodName, method.getParameterTypes());
+            log.trace("Invoking default method {} from interface {}", methodName, method.getDeclaringClass());
             try {
-                Object result = MethodHandles.lookup()
+                //HACK! Does not work in Java 9 and 10
+                Constructor<MethodHandles.Lookup> constructor =
+                        MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
+                constructor.setAccessible(true);
+                Object result = constructor.newInstance(viewInterface)
                         .in(viewInterface)
                         .unreflectSpecial(interfaceMethod, interfaceMethod.getDeclaringClass())
                         .bindTo(proxy)
                         .invokeWithArguments(args);
                 return wrapResult(method, interfaceMethod, result);
             } catch (Throwable throwable) {
-                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", method.getName()), throwable);
+                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", methodName), throwable);
             }
+        }
+
+        private Set<Method> getMethodCandidates(String methodName, Class<?>[] parameterTypes, Class<?> aClass) {
+            return Arrays.stream(aClass.getMethods())
+                            .filter((m) -> m.getName().equals(methodName))
+                            .filter((m) -> Arrays.deepEquals(parameterTypes, m.getParameterTypes()))
+                            .collect(Collectors.toSet());
         }
 
         private Object wrapResult(Method method, Method entityMethod, Object result) {

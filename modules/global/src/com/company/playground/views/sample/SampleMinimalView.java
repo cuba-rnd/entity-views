@@ -15,7 +15,7 @@ public interface SampleMinimalView extends BaseEntityView<SampleEntity> {
     void setName(String name);
 
     @MetaProperty
-    default String getNameLowcase() {
+    default String getNameLowercase() {
         return getName().toLowerCase();
     }
 

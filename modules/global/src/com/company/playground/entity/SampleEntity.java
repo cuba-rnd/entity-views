@@ -1,5 +1,6 @@
 package com.company.playground.entity;
 
+import com.haulmont.chile.core.annotations.NamePattern;
 import com.haulmont.cuba.core.entity.StandardEntity;
 import com.haulmont.cuba.security.entity.User;
 
@@ -11,6 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+@NamePattern("%s|name")
 @Table(name = "PLAYGROUND_SAMPLE_ENTITY")
 @Entity(name = "playground$SampleEntity")
 public class SampleEntity extends StandardEntity {
