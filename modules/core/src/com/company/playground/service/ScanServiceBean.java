@@ -3,6 +3,7 @@ package com.company.playground.service;
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.CyclicView;
+import com.company.playground.views.sample.SampleWithParentView;
 import com.company.playground.views.sample.SampleWithUserView;
 import com.company.playground.views.scan.ViewsConfiguration;
 import com.company.playground.views.scan.exception.ViewInitializationException;
@@ -47,7 +48,18 @@ public class ScanServiceBean implements ScanService {
                     , CyclicView.class);
             log.info("CyclicView - Name: {}, Parent.Name: {}", entityWithParent.getName(), entityWithParent.getParent().getName());
         } catch (ViewInitializationException e) {
-            log.error(e.getMessage(), e); //It's OK bro
+            log.error(e.getMessage()); //It's OK bro
         }
+
+        SampleEntity se2 = dataManager.load(SampleEntity.class)
+                .view(conf.getViewByInterface(SampleWithParentView.class))
+                .list()
+                .stream()
+                .filter(e -> e.getParent() != null)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Cannot find proper test data"));
+
+        SampleWithParentView view = EntityViewWrapper.wrap(se2, SampleWithParentView.class);
+        log.info("Entity name: {}, entity parent name in lowercase; {}", view.getName(), view.getParent().getNameLowercase());
     }
 }
