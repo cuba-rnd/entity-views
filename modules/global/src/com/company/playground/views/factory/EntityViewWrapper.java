@@ -88,9 +88,6 @@ public class EntityViewWrapper {
             try {
                 Method entityMethod = delegateToClass.getMethod(delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
 
-                if (entityMethod == null)
-                    return null;
-
                 if (delegateFromMethod.getReturnType().isAssignableFrom(entityMethod.getReturnType()))
                     return entityMethod;
 
