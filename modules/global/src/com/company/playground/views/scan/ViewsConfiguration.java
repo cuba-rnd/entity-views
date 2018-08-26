@@ -13,10 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -59,7 +56,9 @@ public class ViewsConfiguration {
         Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
         //compose view only by getters
         //TODO check methods to have delegatable method in entity (if returns another view interface check that the entity has a reference to another entity)
-        Set<Method> viewInterfaceMethods = Arrays.stream(viewInterface.getMethods()).filter(ViewsConfiguration::isMethodCandidate).collect(Collectors.toSet());
+        Set<Method> viewInterfaceMethods = Arrays.stream(viewInterface.getMethods())
+                .filter(ViewsConfiguration::isMethodCandidate)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         // skip utility methods from BaseEntityView
         viewInterfaceMethods.removeAll(baseEntityViewMethods);
 
