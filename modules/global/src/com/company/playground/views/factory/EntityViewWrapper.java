@@ -87,12 +87,17 @@ public class EntityViewWrapper {
         private Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
             try {
                 Method entityMethod = delegateToClass.getMethod(delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
+
+                if (entityMethod == null)
+                    return null;
+
                 if (delegateFromMethod.getReturnType().isAssignableFrom(entityMethod.getReturnType()))
                     return entityMethod;
-                else if (isWrappable(delegateFromMethod, entityMethod))
+
+                if (isWrappable(delegateFromMethod, entityMethod))
                     return entityMethod;
-                else
-                    return null;
+
+                return null;
             } catch (NoSuchMethodException e) {
                 return null;
             }
