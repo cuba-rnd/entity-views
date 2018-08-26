@@ -3,20 +3,12 @@ package com.company.playground.views.factory;
 
 import com.company.playground.views.sample.BaseEntityView;
 import com.haulmont.cuba.core.entity.Entity;
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.lang.reflect.*;
 
 /**
  * Created by Aleksey Stukalov on 22/08/2018.
@@ -49,11 +41,10 @@ public class EntityViewWrapper {
                 throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
             final String methodName = method.getName();
-            final Class<?>[] parameterTypes = method.getParameterTypes();
 
             //Check if we should execute base interface method
-            Set<Method> baseEntityViewMethods = getMethodCandidates(methodName, parameterTypes, BaseEntityView.class);
-            if (CollectionUtils.isNotEmpty(baseEntityViewMethods)) {
+            Method baseEntityViewMethod = getDelegateMethodCandidate(method, BaseEntityView.class);
+            if (baseEntityViewMethod != null) {
                 log.trace("Invoking method {} from BaseEntityView", methodName);
                 if ("getOrigin".equals(methodName)) {
                     return entity;
@@ -65,10 +56,9 @@ public class EntityViewWrapper {
             //TODO check and implement setters
 
             //Check if we should execute entity method
-            Set<Method> entityMethods = getMethodCandidates(methodName, parameterTypes, entity.getClass());
-            if (CollectionUtils.isNotEmpty(entityMethods)) {
+            Method entityMethod = getDelegateMethodCandidate(method, entity.getClass());
+            if (entityMethod != null) {
                 log.trace("Invoking method {} from Entity class: {} name: {}", methodName, entity.getClass(), entity.getInstanceName());
-                Method entityMethod = entity.getClass().getMethod(methodName, method.getParameterTypes());
                 Object result = entityMethod.invoke(entity, args);
                 return wrapResult(method, entityMethod, result);
             }
@@ -94,19 +84,29 @@ public class EntityViewWrapper {
             }
         }
 
-        private Set<Method> getMethodCandidates(String methodName, Class<?>[] parameterTypes, Class<?> aClass) {
-            return Arrays.stream(aClass.getMethods())
-                            .filter((m) -> m.getName().equals(methodName))
-                            .filter((m) -> Arrays.deepEquals(parameterTypes, m.getParameterTypes()))
-                            .collect(Collectors.toSet());
+        private Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
+            try {
+                Method entityMethod = delegateToClass.getMethod(delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
+                if (delegateFromMethod.getReturnType().isAssignableFrom(entityMethod.getReturnType()))
+                    return entityMethod;
+                else if (isWrappable(delegateFromMethod, entityMethod))
+                    return entityMethod;
+                else
+                    return null;
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
+        }
+
+        private boolean isWrappable(Method viewMethod, Method entityMethod) {
+            return Entity.class.isAssignableFrom(entityMethod.getReturnType())
+                    && BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType());
         }
 
         private Object wrapResult(Method method, Method entityMethod, Object result) {
-            if (Entity.class.isAssignableFrom(entityMethod.getReturnType())
-                    && BaseEntityView.class.isAssignableFrom(method.getReturnType())) {
-                Entity e = (Entity) result;
+            if (isWrappable(method, entityMethod)) {
                 //noinspection unchecked
-                return wrap(e, (Class) method.getReturnType());
+                return wrap((Entity) result, (Class) method.getReturnType());
             } else {
                 return result;
             }
