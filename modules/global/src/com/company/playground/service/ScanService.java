@@ -1,14 +1,14 @@
 package com.company.playground.service;
 
 
-import com.company.playground.views.sample.SampleWithUserView;
+import com.company.playground.views.sample.SampleMinimalWithUserView;
 
 public interface ScanService {
     String NAME = "playground_ScanService";
 
     void checkProxy();
 
-    SampleWithUserView getAnySampleWithUser();
+    SampleMinimalWithUserView getAnySampleWithUser();
 
-    void saveInterface(SampleWithUserView sample);
+    void saveInterface(SampleMinimalWithUserView sample);
 }

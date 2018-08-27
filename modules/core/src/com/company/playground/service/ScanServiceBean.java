@@ -65,14 +65,14 @@ public class ScanServiceBean implements ScanService {
 
 
     @Override
-    public SampleWithUserView getAnySampleWithUser(){
+    public SampleMinimalWithUserView getAnySampleWithUser(){
         return EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
-                .view(conf.getViewByInterface(SampleWithUserView.class))
-                .list().get(0), SampleWithUserView.class);
+                .view(conf.getViewByInterface(SampleMinimalWithUserView.class))
+                .list().get(0), SampleMinimalWithUserView.class);
     }
 
     @Override
-    public void saveInterface(SampleWithUserView sample){
+    public void saveInterface(SampleMinimalWithUserView sample){
         SampleEntity entity = sample.getOrigin();
         dataManager.commit(entity);
     }
