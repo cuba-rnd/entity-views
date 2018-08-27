@@ -2,7 +2,12 @@ package com.company.playground.views.factory;
 
 
 import com.company.playground.views.sample.BaseEntityView;
+import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.cuba.core.entity.Entity;
+import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.DataManager;
+import com.haulmont.cuba.core.global.EntityStates;
+import com.haulmont.cuba.core.global.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +24,7 @@ public class EntityViewWrapper {
 
     public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
 
-        ViewInterfaceInvocationHandler interfaceInvocationHandler = new ViewInterfaceInvocationHandler(entity, viewInterface);
+        ViewInterfaceInvocationHandler interfaceInvocationHandler = new ViewInterfaceInvocationHandler(entity);
         //noinspection unchecked
         return (V) Proxy.newProxyInstance(entity.getClass().getClassLoader()
                 , new Class<?>[]{viewInterface}
@@ -29,11 +34,9 @@ public class EntityViewWrapper {
     static class ViewInterfaceInvocationHandler implements InvocationHandler, Serializable {
 
         private Entity entity;
-        private Class<? extends BaseEntityView> viewInterface;
 
-        public ViewInterfaceInvocationHandler(Entity entity, Class<? extends BaseEntityView> viewInterface) {
+        public ViewInterfaceInvocationHandler(Entity entity) {
             this.entity = entity;
-            this.viewInterface = viewInterface;
         }
 
         @Override
@@ -41,6 +44,8 @@ public class EntityViewWrapper {
                 throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
             final String methodName = method.getName();
+            //noinspection unchecked
+            Class<? extends BaseEntityView> viewInterface = (Class) method.getDeclaringClass();
 
             //Check if we should execute base interface method
             Method baseEntityViewMethod = getDelegateMethodCandidate(method, BaseEntityView.class);
@@ -49,7 +54,10 @@ public class EntityViewWrapper {
                 if ("getOrigin".equals(methodName)) {
                     return entity;
                 }
-                //TODO implement transform()
+                if ("transform".equals(methodName)) {
+                    //noinspection unchecked
+                    return transform(viewInterface, (Class) args[0], proxy);
+                }
                 throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", methodName));
             }
 
@@ -66,6 +74,7 @@ public class EntityViewWrapper {
             //It is an interface default method - should be executed
             //TODO issues with calling default methods using reflection
             // @see https://blog.jooq.org/2018/03/28/correct-reflective-access-to-interface-default-methods-in-java-8-9-10/
+
             Method interfaceMethod = viewInterface.getMethod(methodName, method.getParameterTypes());
             log.trace("Invoking default method {} from interface {}", methodName, method.getDeclaringClass());
             try {
@@ -98,6 +107,23 @@ public class EntityViewWrapper {
             } catch (NoSuchMethodException e) {
                 return null;
             }
+        }
+
+        private <T extends BaseEntityView> T transform(Class<? extends BaseEntityView> currentViewInterface, Class<T> newViewInterface, Object proxy) {
+            if (currentViewInterface.isAssignableFrom(newViewInterface))
+                //noinspection unchecked
+                return (T) proxy;
+
+            EntityStates entityStates = AppBeans.get(EntityStates.class);
+            ViewsConfiguration vc = AppBeans.get(ViewsConfiguration.class);
+            View newView = vc.getViewByInterface(newViewInterface);
+            Entity e = entity;
+            if (!entityStates.isLoadedWithView(entity, newView)) {
+                DataManager dm = AppBeans.get(DataManager.class);
+                e = dm.reload(entity, newView);
+            }
+            //noinspection unchecked
+            return (T) wrap(e, newViewInterface);
         }
 
         private boolean isWrappable(Method viewMethod, Method entityMethod) {
