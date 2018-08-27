@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 public class SampleIntegrationTest {
@@ -214,6 +216,33 @@ public class SampleIntegrationTest {
         String userName = "New user name "+ System.currentTimeMillis();
         sampleMinimal.getUser().setName(userName);
         assertEquals(sampleWithUser.getUser().getName(), sampleMinimal.getUser().getName());
+    }
+
+    @Test
+    public void testTransformWithEntityReload() {
+
+        SampleMinimalView sampleMinimalView = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
+                        .query("select e from playground$SampleEntity e where e.name = :name")
+                        .parameter("name", "Data2")
+                        .view(conf.getViewByInterface(SampleMinimalView.class))
+                        .list()
+                        .get(0)
+                , SampleMinimalView.class);
+
+        SampleWithParentView sampleWithParent = sampleMinimalView.transform(SampleWithParentView.class);
+
+        assertNotSame(sampleMinimalView.getOrigin(), sampleWithParent.getOrigin());
+
+        assertEquals(sampleWithParent.getId(), sampleMinimalView.getOrigin().getId());
+
+        assertEquals(sampleMinimalView.getName(), sampleWithParent.getName());
+
+        assertNotNull(sampleWithParent.getParent());
+
+        assertEquals(sampleWithParent.getParent().getName(), data1.getName());
+
+        assertEquals(sampleWithParent.getParent().getNameLowercase(), data1.getName().toLowerCase());
+
     }
 
 
