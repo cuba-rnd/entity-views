@@ -62,4 +62,18 @@ public class ScanServiceBean implements ScanService {
         SampleWithParentView view = EntityViewWrapper.wrap(se2, SampleWithParentView.class);
         log.info("Entity name: {}, entity parent name in lowercase; {}", view.getName(), view.getParent().getNameLowercase());
     }
+
+
+    @Override
+    public SampleWithUserView getAnySampleWithUser(){
+        return EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
+                .view(conf.getViewByInterface(SampleWithUserView.class))
+                .list().get(0), SampleWithUserView.class);
+    }
+
+    @Override
+    public void saveInterface(SampleWithUserView sample){
+        SampleEntity entity = sample.getOrigin();
+        dataManager.commit(entity);
+    }
 }
