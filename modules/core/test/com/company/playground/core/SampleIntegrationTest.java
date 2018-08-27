@@ -71,7 +71,7 @@ public class SampleIntegrationTest {
         data2.setParent(data1);
         data2.setUser(user);
 
-        persistence.runInTransaction( (em) -> {
+        persistence.runInTransaction((em) -> {
             em.persist(data1);
             em.persist(data2);
         });
