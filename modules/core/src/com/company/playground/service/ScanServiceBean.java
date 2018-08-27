@@ -3,8 +3,8 @@ package com.company.playground.service;
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.CyclicView;
+import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
-import com.company.playground.views.sample.SampleWithUserView;
 import com.company.playground.views.scan.ViewsConfiguration;
 import com.company.playground.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.core.global.DataManager;
@@ -30,15 +30,15 @@ public class ScanServiceBean implements ScanService {
     public void checkProxy() {
         User user = dataManager.load(User.class).list().get(0);
 
-        SampleWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(user, SampleWithUserView.UserMinimalView.class);
-        log.info("SampleWithUserView.UserMinimalView - Login:{}, Name:{}", userMinimal.getLogin(), userMinimal.getName());
+        SampleMinimalWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class);
+        log.info("SampleMinimalWithUserView.UserMinimalView - Login:{}, Name:{}", userMinimal.getLogin(), userMinimal.getName());
 
         SampleEntity se = dataManager.load(SampleEntity.class)
-                .view(conf.getViewByInterface(SampleWithUserView.class))
+                .view(conf.getViewByInterface(SampleMinimalWithUserView.class))
                 .list().get(0);
-        SampleWithUserView swu = EntityViewWrapper.wrap(se, SampleWithUserView.class);
-        log.info("SampleWithUserView - Name: {}, User.Name: {}", swu.getName(), swu.getUser().getName());
-        log.info("SampleWithUserView - Origin: {}, User.Origin: {}", swu.getOrigin(), swu.getUser().getOrigin());
+        SampleMinimalWithUserView swu = EntityViewWrapper.wrap(se, SampleMinimalWithUserView.class);
+        log.info("SampleMinimalWithUserView - Name: {}, User.Name: {}", swu.getName(), swu.getUser().getName());
+        log.info("SampleMinimalWithUserView - Origin: {}, User.Origin: {}", swu.getOrigin(), swu.getUser().getOrigin());
 
         CyclicView entityWithParent = null;
         try {
