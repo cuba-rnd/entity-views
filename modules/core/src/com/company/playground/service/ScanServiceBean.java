@@ -43,11 +43,9 @@ public class ScanServiceBean implements ScanService {
         }
 
         SampleWithParentView se2 = dataManager.load(SampleEntity.class, SampleWithParentView.class)
+                .query("select e from playground$SampleEntity e where e.parent is not null")
                 .list()
-                .stream()
-                .filter(e -> e.getParent() != null)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Cannot find proper test data"));
+                .get(0);
         log.info("Entity name: {}, entity parent name in lowercase; {}", se2.getName(), se2.getParent().getNameLowercase());
     }
 
