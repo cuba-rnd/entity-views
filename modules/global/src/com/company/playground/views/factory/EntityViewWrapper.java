@@ -78,6 +78,8 @@ public class EntityViewWrapper {
             } else if ("transform".equals(methodName)) {
                 //noinspection unchecked
                 return transform(viewInterface, (Class) args[0], proxy);
+            } else if ("getInterfaceClass".equals(methodName)){
+                return viewInterface;
             } else {
                 return method.invoke(entity, args);
             }
@@ -164,6 +166,9 @@ public class EntityViewWrapper {
         }
 
         private Object wrapResult(Method method, Method entityMethod, Object result) {
+            if (result == null){
+                return null;
+            }
             if (isWrappable(method, entityMethod)) {
                 //noinspection unchecked
                 return wrap((Entity) result, (Class) method.getReturnType());

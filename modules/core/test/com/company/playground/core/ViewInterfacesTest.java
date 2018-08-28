@@ -14,6 +14,7 @@ import com.haulmont.cuba.core.Transaction;
 import com.haulmont.cuba.core.TypedQuery;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
+import com.haulmont.cuba.core.global.PersistenceHelper;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
@@ -27,7 +28,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class ViewInterfacesTest {
 
@@ -211,8 +214,7 @@ public class ViewInterfacesTest {
 
 
     @Test
-    public void testEntityinterface() {
-
+    public void testEntityViewIsEntity() {
 
         SampleMinimalView sampleMinimalView = dataManager.load(SampleEntity.class, SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
@@ -229,7 +231,38 @@ public class ViewInterfacesTest {
         String newName = String.format("Name%d", System.currentTimeMillis());
         sampleMinimalView.setValue("name", newName);
         assertNotEquals(data2.getName(), sampleMinimalView.getValue("name"));
+    }
 
+    @Test
+    public void testCreateNewEntity() {
+        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        assertNull(sample.getName());
+        assertNull(sample.getValue("name"));
+        assertTrue(PersistenceHelper.isNew(sample.getOrigin()));
+    }
+
+    @Test
+    public void testSaveNewEntity() {
+        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        sample.setName("TestName");
+        sample = dataManager.commit(sample);
+        assertNotNull(sample.getId());
+        assertEquals("TestName", sample.getName());
+        assertEquals("TestName", sample.getValue("name"));
+        assertTrue(PersistenceHelper.isDetached(sample.getOrigin()));
+    }
+
+
+    @Test
+    public void testSaveNewEntityAndRewrap() {
+        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        sample.setName("TestName");
+        SampleMinimalWithUserView sampleWithUser = dataManager.commit(sample, SampleMinimalWithUserView.class);
+        assertNotNull(sample.getId());
+        assertEquals("TestName", sampleWithUser.getName());
+        assertEquals("TestName", sampleWithUser.getValue("name"));
+        assertNull(sampleWithUser.getUser());
+        assertTrue(PersistenceHelper.isDetached(sampleWithUser.getOrigin()));
     }
 
 
