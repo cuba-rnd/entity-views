@@ -13,7 +13,11 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -23,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class ViewsConfiguration {
 
-    public static String NAME = "cuba_core_ViewsConfiguration";
+    public static final String NAME = "cuba_core_ViewsConfiguration";
 
     private static final Logger log = LoggerFactory.getLogger(ViewsConfiguration.class);
 

@@ -36,11 +36,13 @@ public class EntityViewWrapper {
                 , interfaceInvocationHandler);
     }
 
-    static class ViewInterfaceInvocationHandler <E extends Entity, V extends BaseEntityView<E>> implements InvocationHandler, Serializable {
+    static class ViewInterfaceInvocationHandler<E extends Entity, V extends BaseEntityView<E>> implements InvocationHandler, Serializable {
 
         private final E entity;
-        private final Class<V>viewInterface;
+        private final Class<V> viewInterface;
 
+        //Internals look similar to com.company.playground.views.scan.ViewsConfiguration.ViewInterfaceInfo
+        //Should we think about merging these classes code somehow?
         public ViewInterfaceInvocationHandler(E entity, Class<V> viewInterface) {
             this.entity = entity;
             this.viewInterface = viewInterface;
@@ -58,15 +60,39 @@ public class EntityViewWrapper {
                 return executeBaseEntityMethod(proxy, args, baseEntityViewMethod);
             }
 
-            //Check if we should execute entity method
+            //Check if we should execute origin entity method
+            //Setter
+            if (isSetterWithView(method, args)) {
+                Method setter = getSetterMethod(args[0], methodName);
+                if (setter != null){
+                    return setter.invoke(entity, ((BaseEntityView)args[0]).getOrigin());
+                }
+            }
+            //Or getter or another method
             Method entityMethod = getDelegateMethodCandidate(method, entity.getClass());
             if (entityMethod != null) {
                 return executeEntityMethod(method, args, methodName, entityMethod);
             }
 
-
             //It is an interface default method - should be executed
             return executeDefaultMethod(proxy, method, args, methodName);
+        }
+
+
+        private boolean isSetterWithView(Method method, Object[] args) {
+            return method.getReturnType().equals(Void.TYPE)
+                    && method.getName().startsWith("set")
+                    && (args.length == 1)
+                    && (args[0] instanceof BaseEntityView);
+        }
+
+        private Method getSetterMethod(Object arg, String methodName) {
+            Entity origin = ((BaseEntityView) arg).getOrigin();
+            try {
+                return entity.getClass().getMethod(methodName, origin.getClass());
+            } catch (SecurityException | NoSuchMethodException e) {
+                return null;
+            }
         }
 
         //TODO We'd better create BaseEntityViewImpl and implement its methods there like in JPA Interfaces
@@ -78,7 +104,7 @@ public class EntityViewWrapper {
             } else if ("transform".equals(methodName)) {
                 //noinspection unchecked
                 return transform(viewInterface, (Class) args[0], proxy);
-            } else if ("getInterfaceClass".equals(methodName)){
+            } else if ("getInterfaceClass".equals(methodName)) {
                 return viewInterface;
             } else {
                 return method.invoke(entity, args);
@@ -102,8 +128,6 @@ public class EntityViewWrapper {
             return (T) wrap(e, newViewInterface);
         }
 
-
-
         private Object executeEntityMethod(Method method, Object[] args, String methodName, Method entityMethod) throws IllegalAccessException, InvocationTargetException {
             log.trace("Invoking method {} from Entity class: {} name: {}", methodName, entity.getClass(), entity.getInstanceName());
             Object result = entityMethod.invoke(entity, args);
@@ -111,10 +135,7 @@ public class EntityViewWrapper {
         }
 
         /**
-         * Default interface method invocation. Refactor this and ensure that we have the same code as in.
-         * @see com.haulmont.cuba.core.config.ConfigDefaultMethod#invoke(ConfigHandler, Object[], Object)
-         * @link https://blog.jooq.org/2018/03/28/correct-reflective-access-to-interface-default-methods-in-java-8-9-10/
-         *
+         * Default interface method invocation. Refactor this and ensure that we have the same code everywhere.
          *
          * @param proxy
          * @param method
@@ -122,6 +143,8 @@ public class EntityViewWrapper {
          * @param methodName
          * @return
          * @throws NoSuchMethodException
+         * @link https://blog.jooq.org/2018/03/28/correct-reflective-access-to-interface-default-methods-in-java-8-9-10/
+         * @see com.haulmont.cuba.core.config.ConfigDefaultMethod#invoke(ConfigHandler, Object[], Object)
          */
         private Object executeDefaultMethod(Object proxy, Method method, Object[] args, String methodName) throws NoSuchMethodException {
             //TODO consider refactoring
@@ -166,7 +189,7 @@ public class EntityViewWrapper {
         }
 
         private Object wrapResult(Method method, Method entityMethod, Object result) {
-            if (result == null){
+            if (result == null) {
                 return null;
             }
             if (isWrappable(method, entityMethod)) {

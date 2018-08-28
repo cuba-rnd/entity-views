@@ -14,8 +14,8 @@ import com.haulmont.cuba.core.Transaction;
 import com.haulmont.cuba.core.TypedQuery;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
-import com.haulmont.cuba.core.global.PersistenceHelper;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
+import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 public class ViewInterfacesTest {
 
     @ClassRule
-    public static AppTestContainer cont = AppTestContainer.Common.INSTANCE;
+    public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
 
@@ -43,6 +43,8 @@ public class ViewInterfacesTest {
     private Persistence persistence;
     private ViewSupportDataManager dataManager;
     private SampleEntity data1, data2;
+    private User user;
+    private ViewsSupportEntityStates entityStates;
 
 
     @Before
@@ -53,8 +55,8 @@ public class ViewInterfacesTest {
         metadata = cont.metadata();
         persistence = cont.persistence();
         dataManager = AppBeans.get(ViewSupportDataManager.class);
+        entityStates = AppBeans.get(ViewsSupportEntityStates.class);
 
-        User user;
         try (Transaction tx = persistence.createTransaction()) {
             EntityManager em = persistence.getEntityManager();
             TypedQuery<User> query = em.createQuery(
@@ -238,18 +240,19 @@ public class ViewInterfacesTest {
         SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
         assertNull(sample.getName());
         assertNull(sample.getValue("name"));
-        assertTrue(PersistenceHelper.isNew(sample.getOrigin()));
+        assertTrue(entityStates.isNew(sample));
     }
 
     @Test
     public void testSaveNewEntity() {
         SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
         sample.setName("TestName");
+        assertTrue(entityStates.isNew(sample));
         sample = dataManager.commit(sample);
         assertNotNull(sample.getId());
         assertEquals("TestName", sample.getName());
         assertEquals("TestName", sample.getValue("name"));
-        assertTrue(PersistenceHelper.isDetached(sample.getOrigin()));
+        assertTrue(entityStates.isDetached(sample));
     }
 
 
@@ -262,7 +265,20 @@ public class ViewInterfacesTest {
         assertEquals("TestName", sampleWithUser.getName());
         assertEquals("TestName", sampleWithUser.getValue("name"));
         assertNull(sampleWithUser.getUser());
-        assertTrue(PersistenceHelper.isDetached(sampleWithUser.getOrigin()));
+        assertTrue(entityStates.isDetached(sampleWithUser));
+    }
+
+    @Test
+    public void testSetViewEntity(){
+        SampleMinimalWithUserView sampleWithUser = dataManager.create(SampleEntity.class, SampleMinimalWithUserView.class);
+        sampleWithUser.setName("TestName");
+        sampleWithUser = dataManager.commit(sampleWithUser, SampleMinimalWithUserView.class);
+        assertNull(sampleWithUser.getUser());
+        sampleWithUser.setUser(EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class));
+        sampleWithUser = dataManager.commit(sampleWithUser);
+        assertNotNull(sampleWithUser.getUser());
+        assertEquals(user.getId(), sampleWithUser.getUser().getId());
+        assertEquals(user.getName(), sampleWithUser.getUser().getName());
     }
 
 

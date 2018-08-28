@@ -9,6 +9,8 @@
 
     <bean name="cuba_DataManager" class="com.haulmont.cuba.core.ViewsSupportDataManagerBean"/>
 
+    <bean name="cuba_EntityStates" class="com.haulmont.cuba.core.global.ViewsSupportEntityStates"/>
+
     <!-- Annotation-based beans -->
     <context:component-scan base-package="com.company.playground"/>
 
