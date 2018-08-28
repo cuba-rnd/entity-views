@@ -11,7 +11,7 @@ public interface SampleWithUserView extends BaseEntityView<SampleEntity> {
 
     String getName();
 
-    SampleEntity getParent();
+    SampleMinimalView getParent();
 
     UserMinimalView getUser();
 
