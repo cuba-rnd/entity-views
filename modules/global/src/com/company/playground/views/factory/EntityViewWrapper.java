@@ -63,7 +63,7 @@ public class EntityViewWrapper {
             //Check if we should execute origin entity method
             //Setter
             if (isSetterWithView(method, args)) {
-                Method setter = getSetterMethod(args[0], methodName);
+                Method setter = getDelegateSetterCandidate(methodName, args[0]);
                 if (setter != null){
                     return setter.invoke(entity, ((BaseEntityView)args[0]).getOrigin());
                 }
@@ -86,10 +86,10 @@ public class EntityViewWrapper {
                     && (args[0] instanceof BaseEntityView);
         }
 
-        private Method getSetterMethod(Object arg, String methodName) {
+        private Method getDelegateSetterCandidate(String delegateFromMethodName, Object arg) {
             Entity origin = ((BaseEntityView) arg).getOrigin();
             try {
-                return entity.getClass().getMethod(methodName, origin.getClass());
+                return entity.getClass().getMethod(delegateFromMethodName, origin.getClass());
             } catch (SecurityException | NoSuchMethodException e) {
                 return null;
             }
