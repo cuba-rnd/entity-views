@@ -9,7 +9,7 @@ import java.io.Serializable;
  * Created by Aleksey Stukalov on 16/08/2018.
  */
 @AbstractEntityView
-public interface BaseEntityView<T extends Entity> extends Serializable {
+public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
 
     T getOrigin();
 

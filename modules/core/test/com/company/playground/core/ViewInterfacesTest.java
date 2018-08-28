@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -201,16 +202,33 @@ public class ViewInterfacesTest {
         SampleWithParentView sampleWithParent = sampleMinimalView.transform(SampleWithParentView.class);
 
         assertNotSame(sampleMinimalView.getOrigin(), sampleWithParent.getOrigin());
-
         assertEquals(sampleWithParent.getId(), sampleMinimalView.getOrigin().getId());
-
         assertEquals(sampleMinimalView.getName(), sampleWithParent.getName());
-
         assertNotNull(sampleWithParent.getParent());
-
         assertEquals(sampleWithParent.getParent().getName(), data1.getName());
-
         assertEquals(sampleWithParent.getParent().getNameLowercase(), data1.getName().toLowerCase());
+    }
+
+
+    @Test
+    public void testEntityinterface() {
+
+
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleEntity.class, SampleMinimalView.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data2")
+                .list()
+                .get(0);
+
+        assertEquals(data2.getId(), sampleMinimalView.getId());
+        assertEquals(data2.getInstanceName(), sampleMinimalView.getInstanceName());
+        assertSame(data2.getMetaClass(), sampleMinimalView.getMetaClass());
+        assertEquals(data2.getName(), sampleMinimalView.getValue("name"));
+
+        sampleMinimalView.addPropertyChangeListener((e) -> {assertEquals(sampleMinimalView.getValue(e.getProperty()), e.getValue());});
+        String newName = String.format("Name%d", System.currentTimeMillis());
+        sampleMinimalView.setValue("name", newName);
+        assertNotEquals(data2.getName(), sampleMinimalView.getValue("name"));
 
     }
 

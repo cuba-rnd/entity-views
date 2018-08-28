@@ -55,7 +55,7 @@ public class EntityViewWrapper {
             //Check if we should execute base interface method
             Method baseEntityViewMethod = getDelegateMethodCandidate(method, BaseEntityView.class);
             if (baseEntityViewMethod != null) {
-                return executeBaseEntityMethod(proxy, args, methodName);
+                return executeBaseEntityMethod(proxy, args, baseEntityViewMethod);
             }
 
             //Check if we should execute entity method
@@ -63,21 +63,24 @@ public class EntityViewWrapper {
             if (entityMethod != null) {
                 return executeEntityMethod(method, args, methodName, entityMethod);
             }
+
+
             //It is an interface default method - should be executed
             return executeDefaultMethod(proxy, method, args, methodName);
         }
 
         //TODO We'd better create BaseEntityViewImpl and implement its methods there like in JPA Interfaces
-        private Object executeBaseEntityMethod(Object proxy, Object[] args, String methodName) {
+        private Object executeBaseEntityMethod(Object proxy, Object[] args, Method method) throws InvocationTargetException, IllegalAccessException {
+            String methodName = method.getName();
             log.trace("Invoking method {} from BaseEntityView", methodName);
             if ("getOrigin".equals(methodName)) {
                 return entity;
-            }
-            if ("transform".equals(methodName)) {
+            } else if ("transform".equals(methodName)) {
                 //noinspection unchecked
                 return transform(viewInterface, (Class) args[0], proxy);
+            } else {
+                return method.invoke(entity, args);
             }
-            throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", methodName));
         }
 
         private <T extends BaseEntityView> T transform(Class<? extends BaseEntityView> currentViewInterface, Class<T> newViewInterface, Object proxy) {
@@ -99,7 +102,6 @@ public class EntityViewWrapper {
 
 
 
-        //TODO check and implement setters
         private Object executeEntityMethod(Method method, Object[] args, String methodName, Method entityMethod) throws IllegalAccessException, InvocationTargetException {
             log.trace("Invoking method {} from Entity class: {} name: {}", methodName, entity.getClass(), entity.getInstanceName());
             Object result = entityMethod.invoke(entity, args);

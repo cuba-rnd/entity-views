@@ -12,9 +12,6 @@ public interface SampleMinimalWithUserView extends SampleMinimalView {
 
     void setUser(UserMinimalView val);
 
-    //TODO decide about additional setter?
-    void setUser(User val);
-
     @EntityViewName(UserMinimalView.NAME)
     interface UserMinimalView extends BaseEntityView<User>{
         String NAME = "user-minimal-view";
