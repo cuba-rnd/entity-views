@@ -7,15 +7,15 @@ import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
 import com.company.playground.views.sample.SampleWithUserView;
-import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.EntityManager;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.Transaction;
 import com.haulmont.cuba.core.TypedQuery;
 import com.haulmont.cuba.core.global.AppBeans;
-import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.Metadata;
+import com.haulmont.cuba.core.global.ViewSupportDataManager;
+import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
 import org.junit.Before;
@@ -24,25 +24,27 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
-public class SampleIntegrationTest {
+public class ViewInterfacesTest {
 
     @ClassRule
-    public static AppTestContainer cont = AppTestContainer.Common.INSTANCE;
+    public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(SampleIntegrationTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
 
     private Metadata metadata;
     private Persistence persistence;
-    private DataManager dataManager;
-    private ViewsConfiguration conf;
+    private ViewSupportDataManager dataManager;
     private SampleEntity data1, data2;
+    private User user;
+    private ViewsSupportEntityStates entityStates;
 
 
     @Before
@@ -52,11 +54,9 @@ public class SampleIntegrationTest {
 
         metadata = cont.metadata();
         persistence = cont.persistence();
-        dataManager = AppBeans.get(DataManager.class);
-        conf = AppBeans.get(ViewsConfiguration.class);
+        dataManager = AppBeans.get(ViewSupportDataManager.class);
+        entityStates = AppBeans.get(ViewsSupportEntityStates.class);
 
-
-        User user;
         try (Transaction tx = persistence.createTransaction()) {
             EntityManager em = persistence.getEntityManager();
             TypedQuery<User> query = em.createQuery(
@@ -88,19 +88,6 @@ public class SampleIntegrationTest {
     }
 
     @Test
-    public void testLoadUser() {
-        try (Transaction tx = persistence.createTransaction()) {
-            EntityManager em = persistence.getEntityManager();
-            TypedQuery<User> query = em.createQuery(
-                    "select u from sec$User u where u.login = :userLogin", User.class);
-            query.setParameter("userLogin", "admin");
-            List<User> users = query.getResultList();
-            tx.commit();
-            assertEquals(1, users.size());
-        }
-    }
-
-    @Test
     public void testWrap() {
         User user = dataManager.load(User.class).list().get(0);
         SampleMinimalWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class);
@@ -110,12 +97,9 @@ public class SampleIntegrationTest {
 
     @Test
     public void testEmbeddedView() {
-        SampleEntity se = dataManager.load(SampleEntity.class)
+        SampleMinimalWithUserView swu = dataManager.load(SampleEntity.class, SampleMinimalWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1")
-                .view(conf.getViewByInterface(SampleMinimalWithUserView.class))
-                .list().get(0);
-        SampleMinimalWithUserView swu = EntityViewWrapper.wrap(se, SampleMinimalWithUserView.class);
+                .parameter("name", "Data1").list().get(0);
 
         assertEquals(data1.getName(), swu.getName());
         assertEquals(data1.getUser().getName(), swu.getUser().getName());
@@ -126,13 +110,12 @@ public class SampleIntegrationTest {
 
     @Test
     public void testDefaultMethod() {
-        SampleMinimalView sampleMinimal = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
-                        .query("select e from playground$SampleEntity e where e.name = :name")
-                        .parameter("name", "Data1")
-                        .view(conf.getViewByInterface(SampleMinimalView.class))
-                        .list()
-                        .get(0)
-                , SampleMinimalView.class);
+
+        SampleMinimalView sampleMinimal = dataManager.load(SampleEntity.class, SampleMinimalView.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data1")
+                .list()
+                .get(0);
 
         assertEquals(data1.getName(), sampleMinimal.getName());
         assertEquals(data1.getName().toLowerCase(), sampleMinimal.getNameLowercase());
@@ -141,13 +124,12 @@ public class SampleIntegrationTest {
 
     @Test
     public void testDefaultMethodEmbedded() {
-        SampleWithParentView sampleMinimal = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
-                        .query("select e from playground$SampleEntity e where e.name = :name")
-                        .parameter("name", "Data2")
-                        .view(conf.getViewByInterface(SampleWithParentView.class))
-                        .list()
-                        .get(0)
-                , SampleWithParentView.class);
+
+        SampleWithParentView sampleMinimal = dataManager.load(SampleEntity.class, SampleWithParentView.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data2")
+                .list()
+                .get(0);
 
         assertEquals(data2.getName(), sampleMinimal.getName());
         assertEquals(data2.getParent().getName().toLowerCase(), sampleMinimal.getParent().getNameLowercase());
@@ -157,13 +139,12 @@ public class SampleIntegrationTest {
     @Test
     public void testTransformToParentView() {
         //SampleMinimalWithUserView is a child of SampleMinimalView
-        SampleMinimalWithUserView sampleMinimalWithUser = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
-                        .query("select e from playground$SampleEntity e where e.name = :name")
-                        .parameter("name", "Data2")
-                        .view(conf.getViewByInterface(SampleMinimalWithUserView.class))
-                        .list()
-                        .get(0)
-                , SampleMinimalWithUserView.class);
+
+        SampleMinimalWithUserView sampleMinimalWithUser = dataManager.load(SampleEntity.class, SampleMinimalWithUserView.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data2")
+                .list()
+                .get(0);
 
         SampleMinimalView sampleMinimal = sampleMinimalWithUser.transform(SampleMinimalView.class);
 
@@ -176,13 +157,11 @@ public class SampleIntegrationTest {
     @Test
     public void testTransformToViewWithSameAttributes() {
         //SampleMinimalWithUserView contains subset of SampleWithUserView attributes
-        SampleWithUserView sampleWithUser = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
+        SampleWithUserView sampleWithUser = dataManager.load(SampleEntity.class, SampleWithUserView.class)
                         .query("select e from playground$SampleEntity e where e.name = :name")
                         .parameter("name", "Data2")
-                        .view(conf.getViewByInterface(SampleWithUserView.class))
                         .list()
-                        .get(0)
-                , SampleWithUserView.class);
+                        .get(0);
 
         SampleMinimalWithUserView sampleMinimal = sampleWithUser.transform(SampleMinimalWithUserView.class);
 
@@ -196,13 +175,11 @@ public class SampleIntegrationTest {
     @Test
     public void testAddingSettersByTransform() {
         //SampleWithUserView has only getters, but SampleMinimalWithUserView has setters too
-        SampleWithUserView sampleWithUser = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
+        SampleWithUserView sampleWithUser = dataManager.load(SampleEntity.class, SampleWithUserView.class)
                         .query("select e from playground$SampleEntity e where e.name = :name")
                         .parameter("name", "Data2")
-                        .view(conf.getViewByInterface(SampleWithUserView.class))
                         .list()
-                        .get(0)
-                , SampleWithUserView.class);
+                        .get(0);
 
         SampleMinimalWithUserView sampleMinimal = sampleWithUser.transform(SampleMinimalWithUserView.class);
 
@@ -213,7 +190,7 @@ public class SampleIntegrationTest {
         sampleMinimal.setName(entityName);
         assertEquals(sampleWithUser.getName(), sampleMinimal.getName());
 
-        String userName = "New user name "+ System.currentTimeMillis();
+        String userName = "New user name " + System.currentTimeMillis();
         sampleMinimal.getUser().setName(userName);
         assertEquals(sampleWithUser.getUser().getName(), sampleMinimal.getUser().getName());
     }
@@ -221,28 +198,87 @@ public class SampleIntegrationTest {
     @Test
     public void testTransformWithEntityReload() {
 
-        SampleMinimalView sampleMinimalView = EntityViewWrapper.wrap(dataManager.load(SampleEntity.class)
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleEntity.class, SampleMinimalView.class)
                         .query("select e from playground$SampleEntity e where e.name = :name")
                         .parameter("name", "Data2")
-                        .view(conf.getViewByInterface(SampleMinimalView.class))
                         .list()
-                        .get(0)
-                , SampleMinimalView.class);
+                        .get(0);
 
         SampleWithParentView sampleWithParent = sampleMinimalView.transform(SampleWithParentView.class);
 
         assertNotSame(sampleMinimalView.getOrigin(), sampleWithParent.getOrigin());
-
         assertEquals(sampleWithParent.getId(), sampleMinimalView.getOrigin().getId());
-
         assertEquals(sampleMinimalView.getName(), sampleWithParent.getName());
-
         assertNotNull(sampleWithParent.getParent());
-
         assertEquals(sampleWithParent.getParent().getName(), data1.getName());
-
         assertEquals(sampleWithParent.getParent().getNameLowercase(), data1.getName().toLowerCase());
+    }
 
+
+    @Test
+    public void testEntityViewIsEntity() {
+
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleEntity.class, SampleMinimalView.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data2")
+                .list()
+                .get(0);
+
+        assertEquals(data2.getId(), sampleMinimalView.getId());
+        assertEquals(data2.getInstanceName(), sampleMinimalView.getInstanceName());
+        assertSame(data2.getMetaClass(), sampleMinimalView.getMetaClass());
+        assertEquals(data2.getName(), sampleMinimalView.getValue("name"));
+
+        sampleMinimalView.addPropertyChangeListener((e) -> {assertEquals(sampleMinimalView.getValue(e.getProperty()), e.getValue());});
+        String newName = String.format("Name%d", System.currentTimeMillis());
+        sampleMinimalView.setValue("name", newName);
+        assertNotEquals(data2.getName(), sampleMinimalView.getValue("name"));
+    }
+
+    @Test
+    public void testCreateNewEntity() {
+        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        assertNull(sample.getName());
+        assertNull(sample.getValue("name"));
+        assertTrue(entityStates.isNew(sample));
+    }
+
+    @Test
+    public void testSaveNewEntity() {
+        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        sample.setName("TestName");
+        assertTrue(entityStates.isNew(sample));
+        sample = dataManager.commit(sample);
+        assertNotNull(sample.getId());
+        assertEquals("TestName", sample.getName());
+        assertEquals("TestName", sample.getValue("name"));
+        assertTrue(entityStates.isDetached(sample));
+    }
+
+
+    @Test
+    public void testSaveNewEntityAndRewrap() {
+        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        sample.setName("TestName");
+        SampleMinimalWithUserView sampleWithUser = dataManager.commit(sample, SampleMinimalWithUserView.class);
+        assertNotNull(sample.getId());
+        assertEquals("TestName", sampleWithUser.getName());
+        assertEquals("TestName", sampleWithUser.getValue("name"));
+        assertNull(sampleWithUser.getUser());
+        assertTrue(entityStates.isDetached(sampleWithUser));
+    }
+
+    @Test
+    public void testSetViewEntity(){
+        SampleMinimalWithUserView sampleWithUser = dataManager.create(SampleEntity.class, SampleMinimalWithUserView.class);
+        sampleWithUser.setName("TestName");
+        sampleWithUser = dataManager.commit(sampleWithUser, SampleMinimalWithUserView.class);
+        assertNull(sampleWithUser.getUser());
+        sampleWithUser.setUser(EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class));
+        sampleWithUser = dataManager.commit(sampleWithUser);
+        assertNotNull(sampleWithUser.getUser());
+        assertEquals(user.getId(), sampleWithUser.getUser().getId());
+        assertEquals(user.getName(), sampleWithUser.getUser().getName());
     }
 
 
