@@ -9,6 +9,7 @@ import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.View;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +30,13 @@ public class EntityViewWrapper {
 
     public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
         log.trace("Wrapping entity: {} to view: {}", entity.getInstanceName(), viewInterface);
-        ViewInterfaceInvocationHandler interfaceInvocationHandler = new ViewInterfaceInvocationHandler<>(entity, viewInterface);
+        Class<? extends BaseEntityView> effectiveView = AppBeans.get(ViewsConfiguration.class).getEffectiveView(viewInterface);
+        log.trace("Effective view: {}", effectiveView);
+        //noinspection unchecked
+        ViewInterfaceInvocationHandler interfaceInvocationHandler = new ViewInterfaceInvocationHandler<>(entity, effectiveView);
         //noinspection unchecked
         return (V) Proxy.newProxyInstance(entity.getClass().getClassLoader()
-                , new Class<?>[]{viewInterface}
+                , new Class<?>[]{effectiveView}
                 , interfaceInvocationHandler);
     }
 
@@ -63,10 +67,7 @@ public class EntityViewWrapper {
             //Check if we should execute origin entity method
             //Setter
             if (isSetterWithView(method, args)) {
-                Method setter = getDelegateSetterCandidate(methodName, args[0]);
-                if (setter != null){
-                    return setter.invoke(entity, ((BaseEntityView)args[0]).getOrigin());
-                }
+                return MethodUtils.invokeMethod(entity, methodName, ((BaseEntityView)args[0]).getOrigin());
             }
             //Or getter or another method
             Method entityMethod = getDelegateMethodCandidate(method, entity.getClass());
@@ -78,21 +79,11 @@ public class EntityViewWrapper {
             return executeDefaultMethod(proxy, method, args, methodName);
         }
 
-
         private boolean isSetterWithView(Method method, Object[] args) {
             return method.getReturnType().equals(Void.TYPE)
                     && method.getName().startsWith("set")
                     && (args.length == 1)
                     && (args[0] instanceof BaseEntityView);
-        }
-
-        private Method getDelegateSetterCandidate(String delegateFromMethodName, Object arg) {
-            Entity origin = ((BaseEntityView) arg).getOrigin();
-            try {
-                return entity.getClass().getMethod(delegateFromMethodName, origin.getClass());
-            } catch (SecurityException | NoSuchMethodException e) {
-                return null;
-            }
         }
 
         //TODO We'd better create BaseEntityViewImpl and implement its methods there like in JPA Interfaces

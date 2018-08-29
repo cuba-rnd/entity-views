@@ -29,20 +29,20 @@ public class ScanServiceBean implements ScanService {
         SampleMinimalWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class);
         log.info("SampleMinimalWithUserView.UserMinimalView - Login:{}, Name:{}", userMinimal.getLogin(), userMinimal.getName());
 
-        SampleMinimalWithUserView swu = dataManager.load(SampleEntity.class, SampleMinimalWithUserView.class).list().get(0);
+        SampleMinimalWithUserView swu = dataManager.loadWithView(SampleMinimalWithUserView.class).list().get(0);
 
         log.info("SampleMinimalWithUserView - Name: {}, User.Name: {}", swu.getName(), swu.getUser().getName());
         log.info("SampleMinimalWithUserView - Origin: {}, User.Origin: {}", swu.getOrigin(), swu.getUser().getOrigin());
 
         CyclicView entityWithParent = null;
         try {
-            entityWithParent = dataManager.load(SampleEntity.class, CyclicView.class).list().get(0);
+            entityWithParent = dataManager.loadWithView(CyclicView.class).list().get(0);
             log.info("CyclicView - Name: {}, Parent.Name: {}", entityWithParent.getName(), entityWithParent.getParent().getName());
         } catch (ViewInitializationException e) {
             log.error(e.getMessage()); //It's OK bro
         }
 
-        SampleWithParentView se2 = dataManager.load(SampleEntity.class, SampleWithParentView.class)
+        SampleWithParentView se2 = dataManager.loadWithView(SampleWithParentView.class)
                 .query("select e from playground$SampleEntity e where e.parent is not null")
                 .list()
                 .get(0);
@@ -52,7 +52,7 @@ public class ScanServiceBean implements ScanService {
 
     @Override
     public SampleMinimalWithUserView getAnySampleWithUser(){
-        return dataManager.load(SampleEntity.class, SampleMinimalWithUserView.class).list().get(0);
+        return dataManager.loadWithView(SampleMinimalWithUserView.class).list().get(0);
     }
 
     @Override

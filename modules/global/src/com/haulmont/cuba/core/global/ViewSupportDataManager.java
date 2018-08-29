@@ -7,9 +7,9 @@ public interface ViewSupportDataManager extends DataManager {
 
     <E extends Entity<K>, V extends BaseEntityView<E>, K> V reload(E entity, Class<V> viewInterface);
 
-    <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> load(Class<E> entityClass, Class<V> entityView);
+    <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> entityView);
 
-    <E extends Entity<K>, V extends BaseEntityView<E>, K> V create(Class<E> entityClass, Class<V> viewInterface);
+    <V extends BaseEntityView> V create(Class<V> viewInterface);
 
     <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView);
 

@@ -1,11 +1,13 @@
 package com.company.playground.views.sample;
 
 import com.company.playground.views.scan.EntityViewName;
+import com.company.playground.views.scan.ReplaceEntityView;
 import com.haulmont.cuba.security.entity.User;
 
 /**
  * Created by Aleksey Stukalov on 16/08/2018.
  */
+@ReplaceEntityView(SampleMinimalView.class)
 public interface SampleMinimalWithUserView extends SampleMinimalView {
 
     UserMinimalView getUser();

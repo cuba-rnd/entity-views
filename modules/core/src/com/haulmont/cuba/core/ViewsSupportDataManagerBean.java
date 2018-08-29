@@ -28,13 +28,15 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
     }
 
     @Override
-    public <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> load(Class<E> entityClass, Class<V> viewInterface) {
-        return new ViewsSupportFluentLoader<>(entityClass, this, viewInterface);
+    public <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> viewInterface) {
+        Class<? extends Entity> entityClass = conf.getViewByInterface(viewInterface).getEntityClass();
+        return new ViewsSupportFluentLoader(entityClass, this, viewInterface);
     }
 
     @Override
-    public <E extends Entity<K>, V extends BaseEntityView<E>, K> V create(Class<E> entityClass, Class<V> viewInterface) {
-        return EntityViewWrapper.wrap(metadata.create(entityClass), viewInterface);
+    public <V extends BaseEntityView> V create(Class<V> viewInterface) {
+        Class<? extends Entity> c = conf.getViewByInterface(viewInterface).getEntityClass();
+        return (V) EntityViewWrapper.wrap(metadata.create(c), viewInterface);
     }
 
     @Override

@@ -9,6 +9,7 @@ import com.haulmont.cuba.core.global.View;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
  * Created by Aleksey Stukalov on 16/08/2018.
  */
 
-public class ViewsConfiguration {
+public class ViewsConfiguration implements InitializingBean {
 
     public static final String NAME = "cuba_core_ViewsConfiguration";
 
@@ -40,6 +41,30 @@ public class ViewsConfiguration {
         this.lazyViewMap = new ConcurrentHashMap<>(viewInterfaceDefinitions.keySet().size());
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        buildViewSubstitutionChain();
+    }
+
+    private void buildViewSubstitutionChain() {
+        //Can be replaced with lambda
+        log.trace("Building view interface substitution chain");
+        for (ViewInterfaceInfo replacing : viewInterfaceDefinitions.values()){
+            if (replacing.getReplacedView() != null){
+                ViewInterfaceInfo toBeReplaced = viewInterfaceDefinitions.get(replacing.getReplacedView());
+                if (toBeReplaced.getEntityClass().isAssignableFrom(replacing.getEntityClass())) {
+                    toBeReplaced.setReplacedBy(replacing.viewInterface);
+                    log.trace("Interface {} will be replaced by {}", toBeReplaced.viewInterface, replacing.viewInterface);
+                } else {
+                    throw new ViewInitializationException(String.format("Error building substitution chain:" +
+                            " %s cannot be replaced by %s: " +
+                            "entity types are not within inheritance tree.",toBeReplaced, replacing));
+                }
+            }
+        }
+        log.trace("Finished view interface substitution build");
+    }
+
     private static boolean isMethodCandidate(Method m) {
         return (m.getReturnType() != Void.TYPE) &&
                 (m.getDeclaredAnnotation(MetaProperty.class) == null);
@@ -49,18 +74,22 @@ public class ViewsConfiguration {
 
         log.trace("Creating view for: {}", viewInterface.getName());
 
-        ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
+        Class<? extends BaseEntityView> effectiveView = getEffectiveView(viewInterface);
+
+        log.trace("Effective view that replaces: {} is: ", viewInterface.getName(), effectiveView.getName());
+
+        ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(effectiveView);
         //Preventing cyclic reference
-        if (visited.contains(viewInterface.getName())) {
+        if (visited.contains(effectiveView.getName())) {
             throw new ViewInitializationException(String.format("Cyclic dependencies in views. Offending view: %s , Parent views: %s"
-                    , viewInterface.getName()
+                    , effectiveView.getName()
                     , String.join(",", visited)));
         }
 
         Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
         //compose view only by getters
         //TODO check methods to have delegatable method in entity (if returns another view interface check that the entity has a reference to another entity)
-        Set<Method> viewInterfaceMethods = Arrays.stream(viewInterface.getMethods())
+        Set<Method> viewInterfaceMethods = Arrays.stream(effectiveView.getMethods())
                 .filter(ViewsConfiguration::isMethodCandidate)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         // skip utility methods from BaseEntityView
@@ -70,7 +99,7 @@ public class ViewsConfiguration {
         View result = new View(viewInterfaceInfo.getEntityClass(), viewInterfaceInfo.getViewName());
         viewInterfaceInfo.setView(result);
 
-        log.trace("View for: {} is created: {}", viewInterface.getName(), result);
+        log.trace("View for: {} is created: {}", effectiveView.getName(), result);
 
         viewInterfaceMethods.forEach(viewMethod -> {
             log.trace("Checking is a method {} refers an entity with a certain view", viewMethod);
@@ -82,10 +111,10 @@ public class ViewsConfiguration {
                 if (refFieldInterfaceInfo == null)
                     throw new ViewInitializationException(
                             String.format("View interface %s references %s view interface which was not initially registered in ViewsConfiguration#scan"
-                                    , viewInterface.getName()
+                                    , effectiveView.getName()
                                     , fieldViewInterface.getName()));
 
-                Set<String> parents = ImmutableSet.<String>builder().addAll(visited).add(viewInterface.getName()).build();
+                Set<String> parents = ImmutableSet.<String>builder().addAll(visited).add(effectiveView.getName()).build();
                 View refFieldView = composeView(refFieldInterfaceInfo.getViewInterface(), parents).getView();
                 refFieldInterfaceInfo.setView(refFieldView);
 
@@ -95,6 +124,16 @@ public class ViewsConfiguration {
             }
         });
         return viewInterfaceInfo;
+    }
+
+    public Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface) {
+        log.trace("Getting effective view for {}", viewInterface);
+        ViewInterfaceInfo info = viewInterfaceDefinitions.get(viewInterface);
+        while (info.getReplacedBy() != null){
+            info = viewInterfaceDefinitions.get(info.getReplacedBy());
+        }
+        log.trace("Effective view for {} is {}", viewInterface, info.getViewInterface());
+        return info.getViewInterface();
     }
 
     //TODO support fetch mode and lazy fetching
@@ -124,6 +163,10 @@ public class ViewsConfiguration {
                 name, method.getClass().getName()));
     }
 
+    public ViewInterfaceInfo getInfoByViewIterface(Class<? extends BaseEntityView> viewInterface){
+        return viewInterfaceDefinitions.get(viewInterface);
+    }
+
     //TODO I suspect we need to put views to CUBA's ViewRepository
     public View getViewByInterface(Class<? extends BaseEntityView> viewInterface) {
         ViewInterfaceInfo key = viewInterfaceDefinitions.get(viewInterface);
@@ -144,9 +187,14 @@ public class ViewsConfiguration {
 
         protected View view; //We create views in lazy manner
 
-        public ViewInterfaceInfo(@NotNull Class<? extends BaseEntityView> viewInterface, @NotNull Class<Entity> entityClass) {
+        protected final Class<? extends BaseEntityView> replacedView;
+
+        protected Class<? extends BaseEntityView> replacedBy;
+
+        public ViewInterfaceInfo(@NotNull Class<? extends BaseEntityView> viewInterface, @NotNull Class<Entity> entityClass, Class<? extends BaseEntityView> replacedView) {
             this.viewInterface = viewInterface;
             this.entityClass = entityClass;
+            this.replacedView = replacedView;
         }
 
         public Class<? extends BaseEntityView> getViewInterface() {
@@ -155,6 +203,18 @@ public class ViewsConfiguration {
 
         public Class<Entity> getEntityClass() {
             return entityClass;
+        }
+
+        protected Class<? extends BaseEntityView> getReplacedView() {
+            return replacedView;
+        }
+
+        protected Class<? extends BaseEntityView> getReplacedBy() {
+            return replacedBy;
+        }
+
+        protected void setReplacedBy(Class<? extends BaseEntityView> replacedBy) {
+            this.replacedBy = replacedBy;
         }
 
         public View getView() {
@@ -171,6 +231,14 @@ public class ViewsConfiguration {
                 return viewInterface.getSimpleName();
             }
             return annotation.value();
+        }
+
+        @Override
+        public String toString() {
+            return "ViewInterfaceInfo{" +
+                    "viewInterface=" + viewInterface.getName() +
+                    ", entityClass=" + entityClass.getName() +
+                    '}';
         }
     }
 }
