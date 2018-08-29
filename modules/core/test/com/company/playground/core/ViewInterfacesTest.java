@@ -88,16 +88,8 @@ public class ViewInterfacesTest {
     }
 
     @Test
-    public void testWrap() {
-        User user = dataManager.load(User.class).list().get(0);
-        SampleMinimalWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class);
-        assertEquals(user.getLogin(), userMinimal.getLogin());
-        assertEquals(user.getName(), userMinimal.getName());
-    }
-
-    @Test
     public void testEmbeddedView() {
-        SampleMinimalWithUserView swu = dataManager.load(SampleEntity.class, SampleMinimalWithUserView.class)
+        SampleMinimalWithUserView swu = dataManager.loadWithView(SampleMinimalWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1").list().get(0);
 
@@ -111,7 +103,7 @@ public class ViewInterfacesTest {
     @Test
     public void testDefaultMethod() {
 
-        SampleMinimalView sampleMinimal = dataManager.load(SampleEntity.class, SampleMinimalView.class)
+        SampleMinimalView sampleMinimal = dataManager.loadWithView(SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1")
                 .list()
@@ -125,7 +117,7 @@ public class ViewInterfacesTest {
     @Test
     public void testDefaultMethodEmbedded() {
 
-        SampleWithParentView sampleMinimal = dataManager.load(SampleEntity.class, SampleWithParentView.class)
+        SampleWithParentView sampleMinimal = dataManager.loadWithView(SampleWithParentView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -140,7 +132,7 @@ public class ViewInterfacesTest {
     public void testTransformToParentView() {
         //SampleMinimalWithUserView is a child of SampleMinimalView
 
-        SampleMinimalWithUserView sampleMinimalWithUser = dataManager.load(SampleEntity.class, SampleMinimalWithUserView.class)
+        SampleMinimalWithUserView sampleMinimalWithUser = dataManager.loadWithView(SampleMinimalWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -157,7 +149,7 @@ public class ViewInterfacesTest {
     @Test
     public void testTransformToViewWithSameAttributes() {
         //SampleMinimalWithUserView contains subset of SampleWithUserView attributes
-        SampleWithUserView sampleWithUser = dataManager.load(SampleEntity.class, SampleWithUserView.class)
+        SampleWithUserView sampleWithUser = dataManager.loadWithView(SampleWithUserView.class)
                         .query("select e from playground$SampleEntity e where e.name = :name")
                         .parameter("name", "Data2")
                         .list()
@@ -175,7 +167,7 @@ public class ViewInterfacesTest {
     @Test
     public void testAddingSettersByTransform() {
         //SampleWithUserView has only getters, but SampleMinimalWithUserView has setters too
-        SampleWithUserView sampleWithUser = dataManager.load(SampleEntity.class, SampleWithUserView.class)
+        SampleWithUserView sampleWithUser = dataManager.loadWithView(SampleWithUserView.class)
                         .query("select e from playground$SampleEntity e where e.name = :name")
                         .parameter("name", "Data2")
                         .list()
@@ -198,7 +190,7 @@ public class ViewInterfacesTest {
     @Test
     public void testTransformWithEntityReload() {
 
-        SampleMinimalView sampleMinimalView = dataManager.load(SampleEntity.class, SampleMinimalView.class)
+        SampleMinimalView sampleMinimalView = dataManager.loadWithView(SampleMinimalView.class)
                         .query("select e from playground$SampleEntity e where e.name = :name")
                         .parameter("name", "Data2")
                         .list()
@@ -218,7 +210,7 @@ public class ViewInterfacesTest {
     @Test
     public void testEntityViewIsEntity() {
 
-        SampleMinimalView sampleMinimalView = dataManager.load(SampleEntity.class, SampleMinimalView.class)
+        SampleMinimalView sampleMinimalView = dataManager.loadWithView(SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -237,7 +229,7 @@ public class ViewInterfacesTest {
 
     @Test
     public void testCreateNewEntity() {
-        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        SampleMinimalView sample = dataManager.create(SampleMinimalView.class);
         assertNull(sample.getName());
         assertNull(sample.getValue("name"));
         assertTrue(entityStates.isNew(sample));
@@ -245,7 +237,7 @@ public class ViewInterfacesTest {
 
     @Test
     public void testSaveNewEntity() {
-        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        SampleMinimalView sample = dataManager.create(SampleMinimalView.class);
         sample.setName("TestName");
         assertTrue(entityStates.isNew(sample));
         sample = dataManager.commit(sample);
@@ -258,7 +250,7 @@ public class ViewInterfacesTest {
 
     @Test
     public void testSaveNewEntityAndRewrap() {
-        SampleMinimalView sample = dataManager.create(SampleEntity.class, SampleMinimalView.class);
+        SampleMinimalView sample = dataManager.create(SampleMinimalView.class);
         sample.setName("TestName");
         SampleMinimalWithUserView sampleWithUser = dataManager.commit(sample, SampleMinimalWithUserView.class);
         assertNotNull(sample.getId());
@@ -270,7 +262,7 @@ public class ViewInterfacesTest {
 
     @Test
     public void testSetViewEntity(){
-        SampleMinimalWithUserView sampleWithUser = dataManager.create(SampleEntity.class, SampleMinimalWithUserView.class);
+        SampleMinimalWithUserView sampleWithUser = dataManager.create(SampleMinimalWithUserView.class);
         sampleWithUser.setName("TestName");
         sampleWithUser = dataManager.commit(sampleWithUser, SampleMinimalWithUserView.class);
         assertNull(sampleWithUser.getUser());

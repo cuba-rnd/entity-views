@@ -60,9 +60,15 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
             log.trace("Scanning package {}", scanPackage);
             Set<BeanDefinition> viewInterfaceDefinitionsCandidates = provider.findCandidateComponents(scanPackage);
             for (BeanDefinition candidate : viewInterfaceDefinitionsCandidates) {
+
                 Class<? extends BaseEntityView> viewInterface = extractViewInterface(candidate);
                 Class<Entity> entityClass = extractEntityClass(viewInterface);
-                viewInterfaceDefinitions.put(viewInterface, new ViewsConfiguration.ViewInterfaceInfo(viewInterface, entityClass));
+
+                ReplaceEntityView replaceViewAnnotation = viewInterface.getAnnotation(ReplaceEntityView.class);
+                Class<? extends BaseEntityView> replacedView = replaceViewAnnotation != null ? replaceViewAnnotation.value() : null;
+
+                viewInterfaceDefinitions.put(viewInterface, new ViewsConfiguration.ViewInterfaceInfo(viewInterface, entityClass, replacedView));
+
                 log.info("View interface {} detected", candidate.getBeanClassName());
             }
 
