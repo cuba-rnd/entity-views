@@ -125,3 +125,40 @@ public interface SampleMinimalWithUserView extends SampleMinimalView {
 ```
 The PoC introduces interface view replacement by using ```@ReplaceEntityView``` (similar to "overwrite" attribute in XML views), 
 so there is no problems with entities extended that are annotated with ```@Extends```.
+
+CUBA's DataManager was extended to support Entity Views in the following way:
+```java
+public interface ViewSupportDataManager extends DataManager {
+
+    <E extends Entity<K>, V extends BaseEntityView<E>, K> V reload(E entity, Class<V> viewInterface);
+
+    <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> entityView);
+
+    <V extends BaseEntityView> V create(Class<V> viewInterface);
+
+    <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView);
+
+    <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> K commit(V entityView, Class<K> targetView);
+}
+```
+Its implementation ```ViewsSupportDataManagerBean``` extends CUBA's ```DataManagerBean``` class and uses its data 
+manipulation methods internally. Also there is a custom ```FluentLoader``` implementation named ```ViewsSupportFluentLoader``` 
+that adds an Entity View support.
+
+We have implemented a special tag that should be specified in ```spring.xml``` to enable Entity Views support
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:views="http://www.cuba-platform.org/schema/data/views"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+        http://www.cuba-platform.org/schema/data/views http://www.cuba-platform.org/schema/cuba-entity-views.xsd">
+
+    <views:views base-packages="com.company.playground.views.sample"/>
+
+</beans>
+```
+Using this tag you may specify more than one package using comma as a separator. 
+
+The diagram below displays Entity Views initialization workflow and involved classes:
