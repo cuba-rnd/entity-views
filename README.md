@@ -1,8 +1,8 @@
-#View Interfaces in CUBA framework - Proof of Concept
+# View Interfaces in CUBA framework - Proof of Concept
 
 <a href="http://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat" alt="license" title=""></a>
 
-##Introduction
+## Introduction
 The purpose of the project is to eliminate issues connected with detached entities when a developer tries to access an 
 attribute that is not included into view which leads to a runtime exception. By wrapping entities into interfaces 
 we add compile-time validation of attribute fetching and access control (read or write). 
@@ -76,7 +76,7 @@ Please note that you won't be able to access ```user``` attribute and in additio
 restrict property change by declaring an interface only with getter.
 
  
-##Solution Description
+## Solution Description
 
 The cornerstone of the solution is an interface 
 ```java
@@ -91,4 +91,37 @@ public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
 }
 ```  
 If you need to create a view for an entity you need to extend the view stated above and add methods for exposing 
-corresponding entity properties. 
+corresponding entity properties. Please note that views can be nested like in this example:
+```java
+public interface SampleWithUserView extends BaseEntityView<SampleEntity> {
+
+    String getName();
+
+    UserMinimalView getUser();
+
+    interface UserMinimalView extends BaseEntityView<User>{
+
+        String getName();
+
+        String getLogin();
+    }
+}
+```
+Also interfaces can be extended (like an XML CUBA views).
+```java
+public interface SampleMinimalWithUserView extends SampleMinimalView {
+
+    UserMinimalView getUser();
+
+    void setUser(UserMinimalView val);
+
+    interface UserMinimalView extends BaseEntityView<User>{
+
+        String getLogin();
+
+        String getName();
+    }
+}
+```
+The PoC introduces interface view replacement by using ```@ReplaceEntityView``` (similar to "overwrite" attribute in XML views), 
+so there is no problems with entities extended that are annotated with ```@Extends```.
