@@ -41,13 +41,15 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
 
     @Override
     public <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView) {
-        E savedEntity = super.commit(entityView.getOrigin());
+        View view = conf.getViewByInterface(entityView.getClass());
+        E savedEntity = commit(entityView.getOrigin(), view);
         return EntityViewWrapper.wrap(savedEntity, entityView.getInterfaceClass());
     }
 
     @Override
     public <E extends Entity, V extends BaseEntityView<E>, T extends BaseEntityView<E>> T commit(V entityView, Class<T> targetView) {
-        E savedEntity = super.commit(entityView.getOrigin());
+        View view = conf.getViewByInterface(targetView);
+        E savedEntity = commit(entityView.getOrigin(), view);
         return EntityViewWrapper.wrap(savedEntity, targetView);
     }
 
