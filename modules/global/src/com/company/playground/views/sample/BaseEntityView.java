@@ -15,6 +15,6 @@ public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
 
     <V extends BaseEntityView<T>> Class<V> getInterfaceClass();
 
-    <V extends BaseEntityView<T>> V transform(Class<? extends BaseEntityView<T>> targetView);
+    <V extends BaseEntityView<T>> V transform(Class<V> targetView);
 
 }
