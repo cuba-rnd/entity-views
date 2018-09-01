@@ -3,7 +3,7 @@
 <a href="http://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat" alt="license" title=""></a>
 
 ## Introduction
-The purpose of the project is to eliminate issues connected with detached entities when a developer tries to access an 
+The purpose of the project is to eliminate issues related to detached entities when a developer tries to access an 
 attribute that is not included into view which leads to a runtime exception. By wrapping entities into interfaces 
 we add compile-time validation of attribute fetching and access control (read or write). 
 
