@@ -6,6 +6,7 @@ import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithUserView;
+import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.EntityManager;
 import com.haulmont.cuba.core.Persistence;
@@ -13,6 +14,7 @@ import com.haulmont.cuba.core.Transaction;
 import com.haulmont.cuba.core.TypedQuery;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
+import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
@@ -36,6 +38,7 @@ public class WrapperTest {
     private ViewSupportDataManager dataManager;
     private SampleEntity data1, data2;
     private User user;
+    private ViewsConfiguration viewsConfig;
 
     @Before
     public void setUp() throws Exception {
@@ -45,6 +48,7 @@ public class WrapperTest {
         metadata = cont.metadata();
         persistence = cont.persistence();
         dataManager = AppBeans.get(ViewSupportDataManager.class);
+        viewsConfig = AppBeans.get(ViewsConfiguration.class);
 
         try (Transaction tx = persistence.createTransaction()) {
             EntityManager em = persistence.getEntityManager();
@@ -97,6 +101,13 @@ public class WrapperTest {
         SampleMinimalView userMinimal = EntityViewWrapper.wrap(sampleEntity, SampleMinimalView.class);
         assertEquals(sampleEntity.getName(), userMinimal.getName());
         assertEquals(SampleMinimalWithUserView.class, userMinimal.getInterfaceClass());
+    }
+
+    @Test
+    public void testGetInterfaceWithSubstitution(){
+        View view = viewsConfig.getViewByInterface(SampleMinimalView.class);
+        View substitute = viewsConfig.getViewByInterface(SampleMinimalWithUserView.class);
+         assertEquals(view.getName(), substitute.getName());
     }
 
 
