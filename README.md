@@ -161,6 +161,8 @@ We have implemented a special tag that should be specified in ```spring.xml``` t
 ```
 Using this tag you can specify more than one package using comma as a separator. 
 
+### Views Initialization
+
 The diagram below displays Entity Views initialization workflow and involved classes:
 
 <img src="https://drive.google.com/uc?export=&id=1sQ1qBX9tz4vdb2UOBEZvMQFZM-YonEAY"/>
@@ -203,7 +205,7 @@ implement entity extension mechanism properly.
 
 Entity Views are ready for use.
 
-## Entity Views Usage
+### Entity Views Usage
  
 
  
