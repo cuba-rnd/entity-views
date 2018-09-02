@@ -159,10 +159,53 @@ We have implemented a special tag that should be specified in ```spring.xml``` t
 
 </beans>
 ```
-Using this tag you may specify more than one package using comma as a separator. 
+Using this tag you can specify more than one package using comma as a separator. 
 
 The diagram below displays Entity Views initialization workflow and involved classes:
 
 <img src="https://drive.google.com/uc?export=&id=1sQ1qBX9tz4vdb2UOBEZvMQFZM-YonEAY"/>
 
+When Spring starts context initialization, it reads ```spring.schemas``` and ```spring.handlers``` files to figure out 
+where to find custom tag definition schema and handler class.
+
+Then Spring instantiates handler class. The handler extends ```org.springframework.beans.factory.xml.NamespaceHandlerSupport```
+and in its ```init()``` method we register handler for tag ```views```. In our case the code is very simple because we 
+define only one custom tag.  
+
+```java
+...
+public static final String VIEWS = "views";
+...
+
+registerBeanDefinitionParser(VIEWS, new ViewsConfigurationParser());
+
+```
+
+That's it. Now Spring knows which parser will process custom tag defined in the config. When config processing starts, 
+for each tag entry, Spring invokes ```com.company.playground.views.scan.ViewsConfigurationParser#parse()``` method.
+
+When the method is invoked it scans packages specified in tag attribute and gathers all view interface definitions. 
+Please look at ```com.company.playground.views.scan.ViewsConfigurationParser#scanForViewInterfaces()``` method for details.
+
+When all view interface definitions are gathered we create and register view interface repository as a Spring bean:
+```java
+BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ViewsConfiguration.class)
+        .addConstructorArgValue(viewInterfaceDefinitions);
+AbstractBeanDefinition viewsConfigurationBean = builder.getBeanDefinition();
+registry.registerBeanDefinition(ViewsConfiguration.NAME, viewsConfigurationBean);
+```
+The registry - ```com.company.playground.views.scan.ViewsConfiguration``` now can be injected into both core services or 
+UI controllers. In the second case you should specify custom tag in ```web``` module's ```web-spring.xml``` configuration.
+
+```ViewsConfiguration``` stores all entity views and performes views substitution automatically after initialization 
+in ```com.company.playground.views.scan.ViewsConfiguration#buildViewSubstitutionChain()```. We need views substitution to 
+implement entity extension mechanism properly. 
+
+Entity Views are ready for use.
+
+## Entity Views Usage
+ 
+
+ 
+ 
 
