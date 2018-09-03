@@ -2,10 +2,8 @@ package com.company.playground.service;
 
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.views.factory.EntityViewWrapper;
-import com.company.playground.views.sample.CyclicView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
-import com.company.playground.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.security.entity.User;
 import org.slf4j.Logger;
@@ -33,14 +31,6 @@ public class ScanServiceBean implements ScanService {
 
         log.info("SampleMinimalWithUserView - Name: {}, User.Name: {}", swu.getName(), swu.getUser().getName());
         log.info("SampleMinimalWithUserView - Origin: {}, User.Origin: {}", swu.getOrigin(), swu.getUser().getOrigin());
-
-        CyclicView entityWithParent = null;
-        try {
-            entityWithParent = dataManager.loadWithView(CyclicView.class).list().get(0);
-            log.info("CyclicView - Name: {}, Parent.Name: {}", entityWithParent.getName(), entityWithParent.getParent().getName());
-        } catch (ViewInitializationException e) {
-            log.error(e.getMessage()); //It's OK bro
-        }
 
         SampleWithParentView se2 = dataManager.loadWithView(SampleWithParentView.class)
                 .query("select e from playground$SampleEntity e where e.parent is not null")

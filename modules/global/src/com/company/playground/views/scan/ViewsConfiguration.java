@@ -6,10 +6,12 @@ import com.google.common.collect.ImmutableSet;
 import com.haulmont.chile.core.annotations.MetaProperty;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
+import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationListener;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
  * Created by Aleksey Stukalov on 16/08/2018.
  */
 
-public class ViewsConfiguration implements InitializingBean {
+public class ViewsConfiguration implements InitializingBean, ApplicationListener<AppContextStartedEvent> {
 
     public static final String NAME = "cuba_core_ViewsConfiguration";
 
@@ -34,23 +36,30 @@ public class ViewsConfiguration implements InitializingBean {
 
     private final Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions;
 
-    private final Map<ViewInterfaceInfo, View> lazyViewMap;
-
     public ViewsConfiguration(Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions) {
         this.viewInterfaceDefinitions = new ConcurrentHashMap<>(viewInterfaceDefinitions);
-        this.lazyViewMap = new ConcurrentHashMap<>(viewInterfaceDefinitions.keySet().size());
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         buildViewSubstitutionChain();
+    }
+
+    @Override
+    public void onApplicationEvent(AppContextStartedEvent event) {
+        log.debug("Creating CUBA views for EntityViews");
+        for (Class<? extends BaseEntityView> interfaceClass : viewInterfaceDefinitions.keySet()) {
+            log.debug("Creating view for {}", interfaceClass);
+            ViewInterfaceInfo info = viewInterfaceDefinitions.get(interfaceClass);
+            info.setView(composeView(interfaceClass, Collections.emptySet()).getView());
+        }
     }
 
     private void buildViewSubstitutionChain() {
         //Can be replaced with lambda
         log.trace("Building view interface substitution chain");
-        for (ViewInterfaceInfo replacing : viewInterfaceDefinitions.values()){
-            if (replacing.getReplacedView() != null){
+        for (ViewInterfaceInfo replacing : viewInterfaceDefinitions.values()) {
+            if (replacing.getReplacedView() != null) {
                 ViewInterfaceInfo toBeReplaced = viewInterfaceDefinitions.get(replacing.getReplacedView());
                 if (toBeReplaced.getEntityClass().isAssignableFrom(replacing.getEntityClass())) {
                     toBeReplaced.setReplacedBy(replacing.viewInterface);
@@ -58,7 +67,7 @@ public class ViewsConfiguration implements InitializingBean {
                 } else {
                     throw new ViewInitializationException(String.format("Error building substitution chain:" +
                             " %s cannot be replaced by %s: " +
-                            "entity types are not within inheritance tree.",toBeReplaced, replacing));
+                            "entity types are not within inheritance tree.", toBeReplaced, replacing));
                 }
             }
         }
@@ -129,7 +138,7 @@ public class ViewsConfiguration implements InitializingBean {
     public Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface) {
         log.trace("Getting effective view for {}", viewInterface);
         ViewInterfaceInfo info = viewInterfaceDefinitions.get(viewInterface);
-        while (info.getReplacedBy() != null){
+        while (info.getReplacedBy() != null) {
             info = viewInterfaceDefinitions.get(info.getReplacedBy());
         }
         log.trace("Effective view for {} is {}", viewInterface, info.getViewInterface());
@@ -163,18 +172,14 @@ public class ViewsConfiguration implements InitializingBean {
                 name, method.getClass().getName()));
     }
 
-    public ViewInterfaceInfo getInfoByViewIterface(Class<? extends BaseEntityView> viewInterface){
-        return viewInterfaceDefinitions.get(viewInterface);
+    public View getViewByInterface(Class<? extends BaseEntityView> viewInterface) {
+        ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
+        if (viewInterfaceInfo == null) {
+            throw new ViewInitializationException(String.format("View %s is not registered", viewInterface));
+        }
+        return viewInterfaceInfo.getView();
     }
 
-    //TODO I suspect we need to put views to CUBA's ViewRepository
-    public View getViewByInterface(Class<? extends BaseEntityView> viewInterface) {
-        ViewInterfaceInfo key = viewInterfaceDefinitions.get(viewInterface);
-        if (key == null) {
-            throw new ViewInitializationException(String.format("View interface %s is not registered in ViewsConfiguration", viewInterface.getName()));
-        }
-        return lazyViewMap.computeIfAbsent(key, (intface) -> composeView(viewInterface, Collections.emptySet()).getView());
-    }
 
     /**
      * POJO containing all information about view interface

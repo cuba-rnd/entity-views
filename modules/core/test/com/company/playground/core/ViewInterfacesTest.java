@@ -16,6 +16,7 @@ import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
+import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
 import org.junit.Before;
@@ -52,6 +53,7 @@ public class ViewInterfacesTest {
 
         log.info("Java Version: {}", System.getProperty("java.version", "Cannot read Java version from system properties"));
 
+        cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
         metadata = cont.metadata();
         persistence = cont.persistence();
         dataManager = AppBeans.get(ViewSupportDataManager.class);
@@ -272,6 +274,4 @@ public class ViewInterfacesTest {
         assertEquals(user.getId(), sampleWithUser.getUser().getId());
         assertEquals(user.getName(), sampleWithUser.getUser().getName());
     }
-
-
 }
