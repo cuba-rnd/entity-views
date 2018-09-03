@@ -1,4 +1,4 @@
-# View Interfaces in CUBA framework - Proof of Concept
+# Entity View Interfaces in CUBA framework - Proof of Concept
 
 <a href="http://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat" alt="license" title=""></a>
 
@@ -126,26 +126,25 @@ public interface SampleMinimalWithUserView extends SampleMinimalView {
 The PoC introduces interface view replacement by using ```@ReplaceEntityView``` (similar to "overwrite" attribute in XML views), 
 so there is no problems with entities extended that are annotated with ```@Extends```.
 
-CUBA's DataManager was extended to support Entity Views in the following way:
+Another Entity View feature is a possibility to define default interface methods to perform calculations using Entity View fileds:
 ```java
-public interface ViewSupportDataManager extends DataManager {
+public interface SampleMinimalView extends BaseEntityView<SampleEntity> {
 
-    <E extends Entity<K>, V extends BaseEntityView<E>, K> V reload(E entity, Class<V> viewInterface);
+    String getName();
 
-    <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> entityView);
+    void setName(String name);
 
-    <V extends BaseEntityView> V create(Class<V> viewInterface);
+    @MetaProperty
+    default String getNameLowercase() {
+        return getName().toLowerCase();
+    }
 
-    <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView);
-
-    <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> K commit(V entityView, Class<K> targetView);
 }
 ```
-Its implementation ```ViewsSupportDataManagerBean``` extends CUBA's ```DataManagerBean``` class and uses its data 
-manipulation methods internally. Also there is a custom ```FluentLoader``` implementation named ```ViewsSupportFluentLoader``` 
-that adds an Entity View support.
+Please note that default interface methods must be annotated with ```@MetaProperty``` to avoid issues during Entity View instance creation.
 
-We have implemented a special tag that should be specified in ```spring.xml``` to enable Entity Views support
+We have implemented a special tag that should be specified in ```spring.xml``` to enable Entity View Interfaces support like in the following
+example:
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -159,7 +158,7 @@ We have implemented a special tag that should be specified in ```spring.xml``` t
 
 </beans>
 ```
-Using this tag you can specify more than one package using comma as a separator. 
+ The tag has only one attribute - comma-separated list of packages that should be scanned. The scanning process includes subpackages too.  
 
 ### Views Initialization
 
@@ -175,12 +174,15 @@ and in its ```init()``` method we register handler for tag ```views```. In our c
 define only one custom tag.  
 
 ```java
-...
-public static final String VIEWS = "views";
-...
+public class ViewsNamespaceHandler extends NamespaceHandlerSupport {
 
-registerBeanDefinitionParser(VIEWS, new ViewsConfigurationParser());
+    public static final String VIEWS = "views";
 
+    @Override
+    public void init() {
+        registerBeanDefinitionParser(VIEWS, new ViewsConfigurationParser());
+    }
+}
 ```
 
 That's it. Now Spring knows which parser will process custom tag defined in the config. When config processing starts, 
@@ -199,15 +201,67 @@ registry.registerBeanDefinition(ViewsConfiguration.NAME, viewsConfigurationBean)
 The registry - ```com.company.playground.views.scan.ViewsConfiguration``` now can be injected into both core services or 
 UI controllers. In the second case you should specify custom tag in ```web``` module's ```web-spring.xml``` configuration.
 
-```ViewsConfiguration``` stores all entity views and performes views substitution automatically after initialization 
+```ViewsConfiguration``` stores all VEntity iew Interfaces and performs views substitution automatically after initialization 
 in ```com.company.playground.views.scan.ViewsConfiguration#buildViewSubstitutionChain()```. We need views substitution to 
 implement entity extension mechanism properly. 
 
-Entity Views are ready for use.
+Entity View Interfaces are ready for use. They will be used to build CUBA views, so this concept do not break existing 
+codebase and you can use old XML-defined views as well as Entity Views.  
 
 ### Entity Views Usage
  
+The main idea is to hide manipulations with Entity Views by adding new methods to DataManager, so a developer don't think about it.
+ 
+CUBA's DataManager was extended to support Entity View Interface in the following way:
+```java
+public interface ViewSupportDataManager extends DataManager {
 
+    <E extends Entity<K>, V extends BaseEntityView<E>, K> V reload(E entity, Class<V> viewInterface);
+
+    <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> entityView);
+
+    <V extends BaseEntityView> V create(Class<V> viewInterface);
+
+    <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView);
+
+    <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> K commit(V entityView, Class<K> targetView);
+}
+```
+Its implementation ```ViewsSupportDataManagerBean``` extends CUBA's ```DataManagerBean``` class and uses its data 
+manipulation methods internally. Also there is a custom ```FluentLoader``` implementation named ```ViewsSupportFluentLoader``` 
+that adds an Entity Views support.
+
+Internally, these classes use ```com.company.playground.views.scan.ViewsConfiguration``` to get CUBA 
+views by Entity View Interface definition. We generate CUBA views when the application context is initialized, that's why 
+the ```ViewsConfiguration``` class implements ```ApplicationListener```. CUBA views creation is implemented in a recursive manner and we 
+perform checks for cyclic references. If there is a cyclic reference in the Entity Views hierarchy, the application fails 
+on a Spring context initialization phase.
+
+Class that performes Entity to Entity View instance conversion is ```com.company.playground.views.factory.EntityViewWrapper```. You need to use
+its ```wrap()``` method to wrap Entity into view. The method creates proxy for an Entity View Interface. The proxy processes all 
+Entity View's method invocations using ```com.company.playground.views.factory.EntityViewWrapper.ViewInterfaceInvocationHandler``` class. The handler 
+tries to find a proper method in the following order:
+1. Methods defined in ```BaseEntityView``` interface.
+2. Methods defined in the entity that is wrapped into the view.
+3. Default interface methods defined in the Entity View Interface.
+If a method is not found we get runtime exception. 
  
- 
+In most of the cases you won't need neither ```ViewsConfiguration``` nor ```EntityViewWrapper```, but you can do if needed. 
+
+If you need to apply a different view to an entity ```BaseEntityView``` provides ```transform()``` method that reloads the entity from the 
+database (if needed) with another view losing all changes that were made previously. 
+```java
+//...
+SampleMinimalView sampleMinimalView = dataManager.loadWithView(SampleMinimalView.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data2")
+                .list()
+                .get(0);
+
+SampleWithParentView sampleWithParent = sampleMinimalView.transform(SampleWithParentView.class);
+//...
+``` 
+## Conclusion
+Entity View Interfaces is a new feature of the platfor which is backward-compatible with existing programming model, but adds strong
+typing to entity manipulation processes and prevents developers from accessing unfetched attributes.
 
