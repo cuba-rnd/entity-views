@@ -51,7 +51,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         for (Class<? extends BaseEntityView> interfaceClass : viewInterfaceDefinitions.keySet()) {
             log.debug("Creating view for {}", interfaceClass);
             ViewInterfaceInfo info = viewInterfaceDefinitions.get(interfaceClass);
-            info.setView(composeView(interfaceClass, Collections.emptySet()).getView());
+            info.setView(composeCubaView(interfaceClass, Collections.emptySet()));
         }
     }
 
@@ -79,7 +79,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
                 (m.getDeclaredAnnotation(MetaProperty.class) == null);
     }
 
-    private ViewInterfaceInfo composeView(Class<? extends BaseEntityView> viewInterface, Set<String> visited) throws ViewInitializationException {
+    private View composeCubaView(Class<? extends BaseEntityView> viewInterface, Set<String> visited) throws ViewInitializationException {
 
         log.trace("Creating view for: {}", viewInterface.getName());
 
@@ -124,7 +124,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
                                     , fieldViewInterface.getName()));
 
                 Set<String> parents = ImmutableSet.<String>builder().addAll(visited).add(effectiveView.getName()).build();
-                View refFieldView = composeView(refFieldInterfaceInfo.getViewInterface(), parents).getView();
+                View refFieldView = composeCubaView(refFieldInterfaceInfo.getViewInterface(), parents);
                 refFieldInterfaceInfo.setView(refFieldView);
 
                 addProperty(result, methodName2FieldName(viewMethod), refFieldView);
@@ -132,7 +132,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
                 addProperty(result, methodName2FieldName(viewMethod), null);
             }
         });
-        return viewInterfaceInfo;
+        return result;
     }
 
     public Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface) {
