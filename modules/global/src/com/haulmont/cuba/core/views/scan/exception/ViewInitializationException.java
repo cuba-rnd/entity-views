@@ -1,4 +1,4 @@
-package com.company.playground.views.scan.exception;
+package com.haulmont.cuba.core.views.scan.exception;
 
 /**
  * Created by Aleksey Stukalov on 16/08/2018.

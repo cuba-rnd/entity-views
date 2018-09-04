@@ -1,7 +1,7 @@
-package com.company.playground.views.sample;
+package com.haulmont.cuba.core.views;
 
-import com.company.playground.views.scan.AbstractEntityView;
 import com.haulmont.cuba.core.entity.Entity;
+import com.haulmont.cuba.core.views.scan.AbstractEntityView;
 
 import java.io.Serializable;
 

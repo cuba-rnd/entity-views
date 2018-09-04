@@ -1,10 +1,10 @@
 package com.company.playground.service;
 
 import com.company.playground.entity.SampleEntity;
-import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.security.entity.User;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;

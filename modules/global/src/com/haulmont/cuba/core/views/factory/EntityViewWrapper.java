@@ -1,14 +1,14 @@
-package com.company.playground.views.factory;
+package com.haulmont.cuba.core.views.factory;
 
 
-import com.company.playground.views.sample.BaseEntityView;
-import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.cuba.core.config.ConfigHandler;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.View;
+import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +45,9 @@ public class EntityViewWrapper {
         private final E entity;
         private final Class<V> viewInterface;
 
-        //Internals look similar to com.company.playground.views.scan.ViewsConfiguration.ViewInterfaceInfo
+        //Internals look similar to com.haulmont.cuba.core.views.scan.ViewsConfiguration.ViewInterfaceInfo
         //Should we think about merging these classes code somehow?
-        public ViewInterfaceInvocationHandler(E entity, Class<V> viewInterface) {
+        ViewInterfaceInvocationHandler(E entity, Class<V> viewInterface) {
             this.entity = entity;
             this.viewInterface = viewInterface;
         }
@@ -113,7 +113,7 @@ public class EntityViewWrapper {
             Entity e = entity;
             if (!entityStates.isLoadedWithView(entity, newView)) {
                 DataManager dm = AppBeans.get(DataManager.class);
-                e = dm.reload(entity, newView);
+                e = dm.reload(entity, newView);//TODO need to provide consistent bahaviour for transform()
             }
             //noinspection unchecked
             return (T) wrap(e, newViewInterface);

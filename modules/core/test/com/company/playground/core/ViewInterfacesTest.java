@@ -2,7 +2,6 @@ package com.company.playground.core;
 
 import com.company.playground.AppTestContainer;
 import com.company.playground.entity.SampleEntity;
-import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
@@ -17,6 +16,7 @@ import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
 import org.junit.Before;

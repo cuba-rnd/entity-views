@@ -1,8 +1,8 @@
-package com.company.playground.views.scan;
+package com.haulmont.cuba.core.views.scan;
 
-import com.company.playground.views.sample.BaseEntityView;
-import com.company.playground.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.core.entity.Entity;
+import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import org.apache.commons.lang.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

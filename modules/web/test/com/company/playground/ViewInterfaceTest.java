@@ -1,14 +1,14 @@
 package com.company.playground;
 
 import com.company.playground.entity.SampleEntity;
-import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
-import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.cuba.client.testsupport.CubaClientTestCase;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
+import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;

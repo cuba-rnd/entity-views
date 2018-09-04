@@ -1,9 +1,9 @@
 package com.haulmont.cuba.core.global;
 
-import com.company.playground.views.factory.EntityViewWrapper;
-import com.company.playground.views.sample.BaseEntityView;
-import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.cuba.core.entity.Entity;
+import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
+import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
 
 import java.util.List;
 import java.util.stream.Collectors;

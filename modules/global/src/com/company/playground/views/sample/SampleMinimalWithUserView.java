@@ -1,7 +1,8 @@
 package com.company.playground.views.sample;
 
-import com.company.playground.views.scan.EntityViewName;
-import com.company.playground.views.scan.ReplaceEntityView;
+import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.scan.EntityViewName;
+import com.haulmont.cuba.core.views.scan.ReplaceEntityView;
 import com.haulmont.cuba.security.entity.User;
 
 /**
@@ -15,7 +16,7 @@ public interface SampleMinimalWithUserView extends SampleMinimalView {
     void setUser(UserMinimalView val);
 
     @EntityViewName(UserMinimalView.NAME)
-    interface UserMinimalView extends BaseEntityView<User>{
+    interface UserMinimalView extends BaseEntityView<User> {
         String NAME = "user-minimal-view";
 
         String getLogin();

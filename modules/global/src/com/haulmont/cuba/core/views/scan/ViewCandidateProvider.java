@@ -1,6 +1,6 @@
-package com.company.playground.views.scan;
+package com.haulmont.cuba.core.views.scan;
 
-import com.company.playground.views.sample.BaseEntityView;
+import com.haulmont.cuba.core.views.BaseEntityView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;

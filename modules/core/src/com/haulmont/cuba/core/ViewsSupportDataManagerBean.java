@@ -1,14 +1,14 @@
 package com.haulmont.cuba.core;
 
-import com.company.playground.views.factory.EntityViewWrapper;
-import com.company.playground.views.sample.BaseEntityView;
-import com.company.playground.views.scan.ViewsConfiguration;
 import com.haulmont.cuba.core.app.DataManagerBean;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.global.ViewsSupportFluentLoader;
+import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
+import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
 
 import javax.inject.Inject;
 

@@ -2,10 +2,10 @@ package com.company.playground.web.screens;
 
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.service.ScanService;
-import com.company.playground.views.factory.EntityViewWrapper;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.haulmont.cuba.core.global.DataManager;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.web.app.mainwindow.AppMainWindow;
 
 import javax.inject.Inject;

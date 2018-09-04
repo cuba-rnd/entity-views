@@ -1,6 +1,7 @@
 package com.company.playground.views.sample;
 
 import com.company.playground.entity.SampleEntity;
+import com.haulmont.cuba.core.views.BaseEntityView;
 import com.haulmont.cuba.security.entity.User;
 
 public interface SampleWithUserView extends BaseEntityView<SampleEntity> {

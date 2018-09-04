@@ -1,4 +1,4 @@
-package com.company.playground.views.scan;
+package com.haulmont.cuba.core.views.scan;
 
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 

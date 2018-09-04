@@ -2,6 +2,7 @@ package com.company.playground.views.sample;
 
 import com.company.playground.entity.SampleEntity;
 import com.haulmont.chile.core.annotations.MetaProperty;
+import com.haulmont.cuba.core.views.BaseEntityView;
 
 /**
  * Created by Aleksey Stukalov on 16/08/2018.

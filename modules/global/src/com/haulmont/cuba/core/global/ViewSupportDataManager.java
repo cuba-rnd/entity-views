@@ -1,7 +1,7 @@
 package com.haulmont.cuba.core.global;
 
-import com.company.playground.views.sample.BaseEntityView;
 import com.haulmont.cuba.core.entity.Entity;
+import com.haulmont.cuba.core.views.BaseEntityView;
 
 public interface ViewSupportDataManager extends DataManager {
 

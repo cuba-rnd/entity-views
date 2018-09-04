@@ -1,8 +1,8 @@
 package com.company.playground.core;
 
 import com.company.playground.CyclicViewTestContainer;
-import com.company.playground.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
+import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.testsupport.TestContainer;
 import org.junit.Assert;
 import org.junit.Before;
