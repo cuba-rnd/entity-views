@@ -1,7 +1,7 @@
 package com.haulmont.cuba.core.views.scan.exception;
 
 /**
- * Created by Aleksey Stukalov on 16/08/2018.
+ * Generic exception that is used to indicate issues in entity views initialization.
  */
 public class ViewInitializationException extends RuntimeException {
 

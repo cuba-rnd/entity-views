@@ -25,9 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Created by Aleksey Stukalov on 16/08/2018.
+ * Registry that builds and stores entity views and corresponding CUBA views. This class also builds proper substitution
+ * for entity views for extended entities and prevents cyclic references between entity views.
+ * <br/>
+ * The class is in application context despite on fact that it is not marked as a Spring component.
  */
-
 public class ViewsConfiguration implements InitializingBean, ApplicationListener<AppContextStartedEvent> {
 
     public static final String NAME = "cuba_core_ViewsConfiguration";
@@ -55,8 +57,12 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         }
     }
 
+    /**
+     * Creates entity views substitution chain by going through existing reverse substitution chain that was created
+     * during scanning. This is not a final substitution - getEffectiveView() returns actual substitution class.
+     */
     private void buildViewSubstitutionChain() {
-        //Can be replaced with lambda
+        //TODO Can be replaced with lambda.
         log.trace("Building view interface substitution chain");
         for (ViewInterfaceInfo replacing : viewInterfaceDefinitions.values()) {
             if (replacing.getReplacedView() != null) {
@@ -74,11 +80,24 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         log.trace("Finished view interface substitution build");
     }
 
+    /**
+     * Checks if a method is a candidate for a CUBA view property.
+     * @param m Candidate method instance.
+     * @return True if the method fits.
+     */
     private static boolean isMethodCandidate(Method m) {
         return (m.getReturnType() != Void.TYPE) &&
                 (m.getDeclaredAnnotation(MetaProperty.class) == null);
     }
 
+    /**
+     * Recursively creates CUBA view definition based on entity view interface contract taking into account views
+     * substitution.
+     * @param viewInterface Entity views interface class.
+     * @param visited Set of processed entity view classes. We need it to prevent cyclic references.
+     * @return CUBA view definition.
+     * @throws ViewInitializationException Throws exception in case of a cyclic reference or bad parent view reference.
+     */
     private View composeCubaView(Class<? extends BaseEntityView> viewInterface, Set<String> visited) throws ViewInitializationException {
 
         log.trace("Creating view for: {}", viewInterface.getName());
@@ -135,6 +154,11 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         return result;
     }
 
+    /**
+     * Returns effective entity view class based on entity view substitution chain.
+     * @param viewInterface Initial view interface type that we want to return in our code.
+     * @return Effective entity view class.
+     */
     public Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface) {
         log.trace("Getting effective view for {}", viewInterface);
         ViewInterfaceInfo info = viewInterfaceDefinitions.get(viewInterface);
@@ -145,6 +169,12 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         return info.getViewInterface();
     }
 
+    /**
+     * Adds a property to a CUBA view.
+     * @param targetView View to be modified.
+     * @param propName Property name.
+     * @param propView View for complex property type.
+     */
     //TODO support fetch mode and lazy fetching
     private void addProperty(View targetView, String propName, @Nullable View propView) {
         if (!targetView.containsProperty(propName)) {
@@ -172,6 +202,11 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
                 name, method.getClass().getName()));
     }
 
+    /**
+     * Returns CUBA view definition based on Entity View class.
+     * @param viewInterface Entity view class.
+     * @return CUBA view.
+     */
     public View getViewByInterface(Class<? extends BaseEntityView> viewInterface) {
         ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
         if (viewInterfaceInfo == null) {
@@ -182,7 +217,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
 
 
     /**
-     * POJO containing all information about view interface
+     * POJO containing all information about view interface.
      */
     public static class ViewInterfaceInfo {
 

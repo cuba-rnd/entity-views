@@ -22,12 +22,21 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * Created by Aleksey Stukalov on 22/08/2018.
+ * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
+ * contract. Please note that class uses application context despite on the fact that all methods are static.
  */
 public class EntityViewWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(EntityViewWrapper.class);
 
+    /**
+     * Wraps entity instance into entity view interface.
+     * @param entity Entity instance to be wrapped.
+     * @param viewInterface Entity View Interface class.
+     * @param <E> Entity Class
+     * @param <V> Effective entity view interface class.
+     * @return Proxy that implements entity view interface of class <code>V</code>
+     */
     public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
         log.trace("Wrapping entity: {} to view: {}", entity.getInstanceName(), viewInterface);
         Class<? extends BaseEntityView> effectiveView = AppBeans.get(ViewsConfiguration.class).getEffectiveView(viewInterface);
@@ -40,6 +49,11 @@ public class EntityViewWrapper {
                 , interfaceInvocationHandler);
     }
 
+    /**
+     * Handler that process all invocations of a entity view's methods.
+     * @param <E> Underlying entity's class.
+     * @param <V> Entity View interface class.
+     */
     static class ViewInterfaceInvocationHandler<E extends Entity, V extends BaseEntityView<E>> implements InvocationHandler, Serializable {
 
         private final E entity;
@@ -52,6 +66,9 @@ public class EntityViewWrapper {
             this.viewInterface = viewInterface;
         }
 
+        /**
+         * @see InvocationHandler#invoke(Object, Method, Object[])
+         */
         @Override
         public Object invoke(Object proxy, Method method, Object[] args)
                 throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
@@ -72,13 +89,19 @@ public class EntityViewWrapper {
             //Or getter or another method
             Method entityMethod = getDelegateMethodCandidate(method, entity.getClass());
             if (entityMethod != null) {
-                return executeEntityMethod(method, args, methodName, entityMethod);
+                return executeEntityMethod(method, args, entityMethod);
             }
 
             //It is an interface default method - should be executed
-            return executeDefaultMethod(proxy, method, args, methodName);
+            return executeDefaultMethod(proxy, method, args);
         }
 
+        /**
+         * Checks if a method is setter method that has only one parameter of a type BaseEntityView.
+         * @param method Method to be verified.
+         * @param args Method's args.
+         * @return True if is's a proper setter.
+         */
         private boolean isSetterWithView(Method method, Object[] args) {
             return method.getReturnType().equals(Void.TYPE)
                     && method.getName().startsWith("set")
@@ -86,6 +109,15 @@ public class EntityViewWrapper {
                     && (args[0] instanceof BaseEntityView);
         }
 
+        /**
+         * Invokes methods defined for all entity views in BaseEntityView.
+         * @param proxy Entity view interface instance.
+         * @param args Method's arguments.
+         * @param method Method candidate to be invoked.
+         * @return Method invocation result.
+         * @throws InvocationTargetException If method is not found in the view interface instance.
+         * @throws IllegalAccessException If entity view instance's method is not accessible.
+         */
         //TODO We'd better create BaseEntityViewImpl and implement its methods there like in JPA Interfaces
         private Object executeBaseEntityMethod(Object proxy, Object[] args, Method method) throws InvocationTargetException, IllegalAccessException {
             String methodName = method.getName();
@@ -102,6 +134,15 @@ public class EntityViewWrapper {
             }
         }
 
+        /**
+         * Implementation of the {@link BaseEntityView#transform(Class)}. Does not reload entity from data store if
+         * we transform to a "parent" interface.
+         * @param currentViewInterface Source interface class.
+         * @param newViewInterface Target interface class.
+         * @param proxy Current Entity View interface instance.
+         * @param <T> Target interface class.
+         * @return Target interface instance.
+         */
         private <T extends BaseEntityView> T transform(Class<? extends BaseEntityView> currentViewInterface, Class<T> newViewInterface, Object proxy) {
             if (currentViewInterface.isAssignableFrom(newViewInterface))
                 //noinspection unchecked
@@ -113,35 +154,42 @@ public class EntityViewWrapper {
             Entity e = entity;
             if (!entityStates.isLoadedWithView(entity, newView)) {
                 DataManager dm = AppBeans.get(DataManager.class);
-                e = dm.reload(entity, newView);//TODO need to provide consistent bahaviour for transform()
+                e = dm.reload(entity, newView);//TODO need to provide consistent behaviour for transform()
             }
             //noinspection unchecked
             return (T) wrap(e, newViewInterface);
         }
 
-        private Object executeEntityMethod(Method method, Object[] args, String methodName, Method entityMethod) throws IllegalAccessException, InvocationTargetException {
-            log.trace("Invoking method {} from Entity class: {} name: {}", methodName, entity.getClass(), entity.getInstanceName());
+        /**
+         * Executes entity methods apart from setters. Setter methods are executed separately.
+         * @param method Method to be executed.
+         * @param args Method's arguments.
+         * @param entityMethod Effective instance's method that will be executed.
+         * @return Method invocation result.
+         * @throws IllegalAccessException If entity instance's method is not accessible.
+         * @throws InvocationTargetException If method is not found in the entity instance.
+         */
+        private Object executeEntityMethod(Method method, Object[] args, Method entityMethod) throws IllegalAccessException, InvocationTargetException {
+            log.trace("Invoking method {} from Entity class: {} name: {}", method.getName(), entity.getClass(), entity.getInstanceName());
             Object result = entityMethod.invoke(entity, args);
             return wrapResult(method, entityMethod, result);
         }
 
         /**
          * Default interface method invocation. Refactor this and ensure that we have the same code everywhere.
-         *
-         * @param proxy
-         * @param method
-         * @param args
-         * @param methodName
+         * @param proxy Entity View interface proxy instance.
+         * @param method Interface default method to be invoked.
+         * @param args Method's arguments.
          * @return
          * @throws NoSuchMethodException
          * @link https://blog.jooq.org/2018/03/28/correct-reflective-access-to-interface-default-methods-in-java-8-9-10/
          * @see com.haulmont.cuba.core.config.ConfigDefaultMethod#invoke(ConfigHandler, Object[], Object)
          */
-        private Object executeDefaultMethod(Object proxy, Method method, Object[] args, String methodName) throws NoSuchMethodException {
+        private Object executeDefaultMethod(Object proxy, Method method, Object[] args) throws NoSuchMethodException {
             //TODO consider refactoring
-            Method interfaceMethod = viewInterface.getMethod(methodName, method.getParameterTypes());
+            Method interfaceMethod = viewInterface.getMethod(method.getName(), method.getParameterTypes());
             Class<?> declaringClass = method.getDeclaringClass();
-            log.trace("Invoking default method {} from interface {}", methodName, declaringClass);
+            log.trace("Invoking default method {} from interface {}", method.getName(), declaringClass);
             try {
                 //HACK! Does not work in Java 9 and 10
                 Constructor<MethodHandles.Lookup> constructor =
@@ -154,10 +202,16 @@ public class EntityViewWrapper {
                         .invokeWithArguments(args);
                 return wrapResult(method, interfaceMethod, result);
             } catch (Throwable throwable) {
-                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", methodName), throwable);
+                throw new UnsupportedOperationException(String.format("Method %s is not supported in view interfaces", method.getName()), throwable);
             }
         }
 
+        /**
+         * Checks if a method's invocation can be delegated to a class.
+         * @param delegateFromMethod Method to be invoked.
+         * @param delegateToClass Candidate class.
+         * @return Method instance if the class contain its definition.
+         */
         private Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
             try {
                 Method entityMethod = delegateToClass.getMethod(delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
@@ -174,11 +228,24 @@ public class EntityViewWrapper {
             }
         }
 
+        /**
+         * Checks if a method's invocation result can be wrapped into entity view.
+         * @param viewMethod Method to check.
+         * @param entityMethod Effective entity method to be invoked.
+         * @return True if invocation result can be wrapped.
+         */
         private boolean isWrappable(Method viewMethod, Method entityMethod) {
             return Entity.class.isAssignableFrom(entityMethod.getReturnType())
                     && BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType());
         }
 
+        /**
+         * Wraps method invocation result into entity view if needed.
+         * @param method Method to be invoked.
+         * @param entityMethod Effective entity method to be wrapped.
+         * @param result Invocation result.
+         * @return Wrapped result.
+         */
         private Object wrapResult(Method method, Method entityMethod, Object result) {
             if (result == null) {
                 return null;

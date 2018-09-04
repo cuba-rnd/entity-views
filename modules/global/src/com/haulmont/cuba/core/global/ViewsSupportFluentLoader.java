@@ -8,6 +8,10 @@ import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * This is a PoC for the Entity Views support in FluentLoader.
+ * @see FluentLoader
+ */
 public class ViewsSupportFluentLoader<E extends Entity<K>, V extends BaseEntityView<E>, K> {
 
     private final Class<V> viewInterface;

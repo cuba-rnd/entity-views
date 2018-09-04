@@ -9,7 +9,7 @@
         <xsd:attribute name="base-packages" type="xsd:string" use="required">
             <xsd:annotation>
                 <xsd:documentation><![CDATA[
-				Defines the base package where the views interface will be tried to be detected.
+				Defines comma-separated base packages to scan to for entity view interfaces registration.
 				]]></xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

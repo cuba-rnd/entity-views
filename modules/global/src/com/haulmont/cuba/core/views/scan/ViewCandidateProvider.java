@@ -10,7 +10,9 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
 /**
- * Created by Aleksey Stukalov on 16/08/2018.
+ * Scans classpath and looks for entity view candidates. Candidates should implement {@link BaseEntityView}
+ * and should not be annotated with {@link AbstractEntityView}.
+ * @see ClassPathScanningCandidateComponentProvider
  */
 public class ViewCandidateProvider extends ClassPathScanningCandidateComponentProvider {
 

@@ -26,6 +26,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * It is a custom tag config parser and an entity view registrar. It is called by Spring on every <code><views/><code/>
+ * tag entry found in spring.xml. This class reads package names from the tag, runs a scanner to find entity views and
+ * then creates {@link ViewsConfiguration} bean with all entity view interface definitions and puts it to Spring context.
+ * @see BeanDefinitionParser
+ */
 public class ViewsConfigurationParser implements BeanDefinitionParser {
 
     private static final Logger log = LoggerFactory.getLogger(ViewsConfigurationParser.class);
@@ -52,6 +58,12 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
         return null;
     }
 
+    /**
+     * Scans packages to find entity views building views replacement chains.
+     * @param parserContext Parser context that contains information about tag and load context.
+     * @param packages List of packages to scan.
+     * @return Map containing entity view classes and DTOs with description for building CUBA views, replacement chains, etc.
+     */
     protected Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> scanForViewInterfaces(ParserContext parserContext, String[] packages) {
         XmlReaderContext readerContext = parserContext.getReaderContext();
         ViewCandidateProvider provider = new ViewCandidateProvider(readerContext.getResourceLoader());
