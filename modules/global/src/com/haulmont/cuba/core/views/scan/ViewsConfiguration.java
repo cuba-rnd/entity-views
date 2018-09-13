@@ -1,6 +1,7 @@
 package com.haulmont.cuba.core.views.scan;
 
 import com.google.common.collect.ImmutableSet;
+import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.chile.core.annotations.MetaProperty;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
@@ -16,9 +17,13 @@ import org.springframework.context.ApplicationListener;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,12 +133,12 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         viewInterfaceInfo.setView(result);
 
         log.trace("View for: {} is created: {}", effectiveView.getName(), result);
-
         viewInterfaceMethods.forEach(viewMethod -> {
-            log.trace("Checking is a method {} refers an entity with a certain view", viewMethod);
-            if (BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType())) {
-                //noinspection unchecked
-                Class<BaseEntityView> fieldViewInterface = (Class<BaseEntityView>) viewMethod.getReturnType();
+            log.trace("Checking is a method {} refers an entity with a certain view", viewMethod.getName());
+            Class<?> fieldViewInterface = getReturnViewType(viewMethod);
+            log.trace("Method {} return type {}", viewMethod.getName(), fieldViewInterface);
+
+            if (BaseEntityView.class.isAssignableFrom(fieldViewInterface)) {
                 ViewInterfaceInfo refFieldInterfaceInfo = viewInterfaceDefinitions.get(fieldViewInterface);
 
                 if (refFieldInterfaceInfo == null)
@@ -152,6 +157,25 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
             }
         });
         return result;
+    }
+
+    private Class<?> getReturnViewType(Method viewMethod) {
+        Class<?> returnType = viewMethod.getReturnType();
+        boolean isCollection = Collection.class.isAssignableFrom(returnType);
+        if (isCollection) {
+            Type genericReturnType = viewMethod.getGenericReturnType();
+            if (genericReturnType instanceof ParameterizedType) {
+                ParameterizedType type = (ParameterizedType) genericReturnType;
+                List<Class<?>> collectionTypes = Arrays.stream(type.getActualTypeArguments())
+                        .map(t -> ReflectionHelper.getClass(t.getTypeName())).collect(Collectors.toList());
+                if (collectionTypes.stream().anyMatch(BaseEntityView.class::isAssignableFrom)){
+                    return collectionTypes.stream().filter(BaseEntityView.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
+                } else {
+                    return collectionTypes.stream().findFirst().orElseThrow(RuntimeException::new);
+                }
+            }
+        }
+        return returnType;
     }
 
     /**

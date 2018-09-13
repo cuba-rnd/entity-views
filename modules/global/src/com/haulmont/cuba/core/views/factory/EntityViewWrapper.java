@@ -9,6 +9,7 @@ import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.views.BaseEntityView;
 import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
+import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
@@ -31,14 +37,15 @@ public class EntityViewWrapper {
 
     /**
      * Wraps entity instance into entity view interface.
-     * @param entity Entity instance to be wrapped.
+     *
+     * @param entity        Entity instance to be wrapped.
      * @param viewInterface Entity View Interface class.
-     * @param <E> Entity Class
-     * @param <V> Effective entity view interface class.
+     * @param <E>           Entity Class
+     * @param <V>           Effective entity view interface class.
      * @return Proxy that implements entity view interface of class <code>V</code>
      */
     public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
-        log.trace("Wrapping entity: {} to view: {}", entity.getInstanceName(), viewInterface);
+        log.trace("Wrapping entity: {} to view: {}", entity.toString(), viewInterface);
         Class<? extends BaseEntityView> effectiveView = AppBeans.get(ViewsConfiguration.class).getEffectiveView(viewInterface);
         log.trace("Effective view: {}", effectiveView);
         //noinspection unchecked
@@ -51,6 +58,7 @@ public class EntityViewWrapper {
 
     /**
      * Handler that process all invocations of a entity view's methods.
+     *
      * @param <E> Underlying entity's class.
      * @param <V> Entity View interface class.
      */
@@ -84,7 +92,7 @@ public class EntityViewWrapper {
             //Check if we should execute origin entity method
             //Setter
             if (isSetterWithView(method, args)) {
-                return MethodUtils.invokeMethod(entity, methodName, ((BaseEntityView)args[0]).getOrigin());
+                return MethodUtils.invokeMethod(entity, methodName, ((BaseEntityView) args[0]).getOrigin());
             }
             //Or getter or another method
             Method entityMethod = getDelegateMethodCandidate(method, entity.getClass());
@@ -98,8 +106,9 @@ public class EntityViewWrapper {
 
         /**
          * Checks if a method is setter method that has only one parameter of a type BaseEntityView.
+         *
          * @param method Method to be verified.
-         * @param args Method's args.
+         * @param args   Method's args.
          * @return True if is's a proper setter.
          */
         private boolean isSetterWithView(Method method, Object[] args) {
@@ -111,12 +120,13 @@ public class EntityViewWrapper {
 
         /**
          * Invokes methods defined for all entity views in BaseEntityView.
-         * @param proxy Entity view interface instance.
-         * @param args Method's arguments.
+         *
+         * @param proxy  Entity view interface instance.
+         * @param args   Method's arguments.
          * @param method Method candidate to be invoked.
          * @return Method invocation result.
          * @throws InvocationTargetException If method is not found in the view interface instance.
-         * @throws IllegalAccessException If entity view instance's method is not accessible.
+         * @throws IllegalAccessException    If entity view instance's method is not accessible.
          */
         //TODO We'd better create BaseEntityViewImpl and implement its methods there like in JPA Interfaces
         private Object executeBaseEntityMethod(Object proxy, Object[] args, Method method) throws InvocationTargetException, IllegalAccessException {
@@ -137,10 +147,11 @@ public class EntityViewWrapper {
         /**
          * Implementation of the {@link BaseEntityView#transform(Class)}. Does not reload entity from data store if
          * we transform to a "parent" interface.
+         *
          * @param currentViewInterface Source interface class.
-         * @param newViewInterface Target interface class.
-         * @param proxy Current Entity View interface instance.
-         * @param <T> Target interface class.
+         * @param newViewInterface     Target interface class.
+         * @param proxy                Current Entity View interface instance.
+         * @param <T>                  Target interface class.
          * @return Target interface instance.
          */
         private <T extends BaseEntityView> T transform(Class<? extends BaseEntityView> currentViewInterface, Class<T> newViewInterface, Object proxy) {
@@ -162,26 +173,28 @@ public class EntityViewWrapper {
 
         /**
          * Executes entity methods apart from setters. Setter methods are executed separately.
-         * @param method Method to be executed.
-         * @param args Method's arguments.
+         *
+         * @param method       Method to be executed.
+         * @param args         Method's arguments.
          * @param entityMethod Effective instance's method that will be executed.
          * @return Method invocation result.
-         * @throws IllegalAccessException If entity instance's method is not accessible.
+         * @throws IllegalAccessException    If entity instance's method is not accessible.
          * @throws InvocationTargetException If method is not found in the entity instance.
          */
         private Object executeEntityMethod(Method method, Object[] args, Method entityMethod) throws IllegalAccessException, InvocationTargetException {
-            log.trace("Invoking method {} from Entity class: {} name: {}", method.getName(), entity.getClass(), entity.getInstanceName());
+            log.trace("Invoking method {} from Entity class: {} name: {}", method.getName(), entity.getClass(), entity.toString());
             Object result = entityMethod.invoke(entity, args);
             return wrapResult(method, entityMethod, result);
         }
 
         /**
          * Default interface method invocation. Refactor this and ensure that we have the same code everywhere.
-         * @param proxy Entity View interface proxy instance.
+         *
+         * @param proxy  Entity View interface proxy instance.
          * @param method Interface default method to be invoked.
-         * @param args Method's arguments.
-         * @return
-         * @throws NoSuchMethodException
+         * @param args   Method's arguments.
+         * @return Default interface method invocation result.
+         * @throws NoSuchMethodException in case default method is not found.
          * @link https://blog.jooq.org/2018/03/28/correct-reflective-access-to-interface-default-methods-in-java-8-9-10/
          * @see com.haulmont.cuba.core.config.ConfigDefaultMethod#invoke(ConfigHandler, Object[], Object)
          */
@@ -208,8 +221,9 @@ public class EntityViewWrapper {
 
         /**
          * Checks if a method's invocation can be delegated to a class.
+         *
          * @param delegateFromMethod Method to be invoked.
-         * @param delegateToClass Candidate class.
+         * @param delegateToClass    Candidate class.
          * @return Method instance if the class contain its definition.
          */
         private Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
@@ -230,7 +244,8 @@ public class EntityViewWrapper {
 
         /**
          * Checks if a method's invocation result can be wrapped into entity view.
-         * @param viewMethod Method to check.
+         *
+         * @param viewMethod   Method to check.
          * @param entityMethod Effective entity method to be invoked.
          * @return True if invocation result can be wrapped.
          */
@@ -241,14 +256,36 @@ public class EntityViewWrapper {
 
         /**
          * Wraps method invocation result into entity view if needed.
-         * @param method Method to be invoked.
+         *
+         * @param method       Method to be invoked.
          * @param entityMethod Effective entity method to be wrapped.
-         * @param result Invocation result.
+         * @param result       Invocation result.
          * @return Wrapped result.
          */
         private Object wrapResult(Method method, Method entityMethod, Object result) {
             if (result == null) {
                 return null;
+            }
+            if (result instanceof Collection) {
+                Type genericInterface = method.getGenericReturnType();
+                if (genericInterface instanceof ParameterizedType) {
+                    ParameterizedType type = (ParameterizedType)genericInterface;
+                    Type[] actualTypeArguments = type.getActualTypeArguments();
+                    if (actualTypeArguments.length != 1) {throw new ViewInitializationException();}
+                    Type listType = actualTypeArguments[0];
+                    Collection collection = (Collection)result;
+                    List<BaseEntityView> resultList = new ArrayList<>();
+                    try {
+                        Class viewInterface = Class.forName(listType.getTypeName());
+                        for (Object obj : collection) {
+                            BaseEntityView v = wrap((E)obj, viewInterface);
+                            resultList.add(v);
+                        }
+                        return resultList;
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             if (isWrappable(method, entityMethod)) {
                 //noinspection unchecked

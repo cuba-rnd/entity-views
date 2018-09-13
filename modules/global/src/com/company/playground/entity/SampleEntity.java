@@ -9,8 +9,10 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @NamePattern("%s|name")
 @Table(name = "PLAYGROUND_SAMPLE_ENTITY")
@@ -29,6 +31,18 @@ public class SampleEntity extends StandardEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID")
     protected User user;
+
+    @OneToMany(mappedBy = "sampleEntity")
+    protected List<EntityParameter> params;
+
+    public void setParams(List<EntityParameter> params) {
+        this.params = params;
+    }
+
+    public List<EntityParameter> getParams() {
+        return params;
+    }
+
 
     public void setParent(SampleEntity parent) {
         this.parent = parent;
