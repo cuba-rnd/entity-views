@@ -9,7 +9,6 @@ import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.views.BaseEntityView;
 import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
-import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +19,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -45,7 +40,10 @@ public class EntityViewWrapper {
      * @return Proxy that implements entity view interface of class <code>V</code>
      */
     public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
-        log.trace("Wrapping entity: {} to view: {}", entity.toString(), viewInterface);
+        if (entity == null){
+            return null;
+        }
+        log.trace("Wrapping entity: {} to view: {}", entity, viewInterface);
         Class<? extends BaseEntityView> effectiveView = AppBeans.get(ViewsConfiguration.class).getEffectiveView(viewInterface);
         log.trace("Effective view: {}", effectiveView);
         //noinspection unchecked
@@ -266,26 +264,11 @@ public class EntityViewWrapper {
             if (result == null) {
                 return null;
             }
-            if (result instanceof Collection) {
-                Type genericInterface = method.getGenericReturnType();
-                if (genericInterface instanceof ParameterizedType) {
-                    ParameterizedType type = (ParameterizedType)genericInterface;
-                    Type[] actualTypeArguments = type.getActualTypeArguments();
-                    if (actualTypeArguments.length != 1) {throw new ViewInitializationException();}
-                    Type listType = actualTypeArguments[0];
-                    Collection collection = (Collection)result;
-                    List<BaseEntityView> resultList = new ArrayList<>();
-                    try {
-                        Class viewInterface = Class.forName(listType.getTypeName());
-                        for (Object obj : collection) {
-                            BaseEntityView v = wrap((E)obj, viewInterface);
-                            resultList.add(v);
-                        }
-                        return resultList;
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
+            if (result instanceof List) {
+                ViewsConfiguration viewsConfiguration = AppBeans.get(ViewsConfiguration.class);
+                Class<?> returnType = viewsConfiguration.getReturnViewType(method);
+                log.trace("Method {} return type {}", method, returnType);
+                return new WrappingList((List<Entity>)result, returnType);
             }
             if (isWrappable(method, entityMethod)) {
                 //noinspection unchecked

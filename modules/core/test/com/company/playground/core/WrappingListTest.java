@@ -1,10 +1,9 @@
 package com.company.playground.core;
 
 import com.company.playground.AppTestContainer;
-import com.company.playground.entity.EntityParameter;
 import com.company.playground.entity.SampleEntity;
-import com.company.playground.views.sample.ParameterNameOnly;
-import com.company.playground.views.sample.SampleWithParameters;
+import com.company.playground.views.sample.SampleMinimalView;
+import com.google.common.collect.Lists;
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
@@ -12,6 +11,7 @@ import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
+import com.haulmont.cuba.core.views.factory.WrappingList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -23,9 +23,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
-public class DetailsViewsTest {
+public class WrappingListTest {
 
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
@@ -36,7 +36,6 @@ public class DetailsViewsTest {
     private Persistence persistence;
     private ViewSupportDataManager dataManager;
     private SampleEntity data1, data2;
-    private EntityParameter param1, param2;
     private ViewsSupportEntityStates entityStates;
 
 
@@ -54,21 +53,11 @@ public class DetailsViewsTest {
         data1 = metadata.create(SampleEntity.class);
         data1.setName("Data1");
 
-        param1 = metadata.create(EntityParameter.class);
-        param1.setName("Param1");
-        param1.setSampleEntity(data1);
-
-        param2 = metadata.create(EntityParameter.class);
-        param2.setName("Param2");
-        param2.setSampleEntity(data1);
-
         data2 = metadata.create(SampleEntity.class);
         data2.setName("Data2");
 
         persistence.runInTransaction((em) -> {
             em.persist(data1);
-            em.persist(param1);
-            em.persist(param2);
             em.persist(data2);
         });
     }
@@ -81,26 +70,32 @@ public class DetailsViewsTest {
     }
 
     @Test
-    public void testMasterDetails(){
-        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1")
-                .list().get(0);
-        List<ParameterNameOnly> params = sampleWithParameters.getParams();
-        params.sort(Comparator.comparing(ParameterNameOnly::getName));
-        assertEquals(2, params.size());
-        assertTrue(params.get(0).getName().equals("Param1") && params.get(1).getName().equals("Param2"));
-    }
+    public void testToArray(){
+        List<SampleEntity> testList = Lists.newArrayList(data1, data2);
+        testList.sort(Comparator.comparing(SampleEntity::getName));
+        WrappingList<SampleEntity, SampleMinimalView> wrappingList = new WrappingList<>(testList, SampleMinimalView.class);
 
-    @Test
-    public void testEmptyDetails(){
-        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data2")
-                .list().get(0);
-        List<ParameterNameOnly> params = sampleWithParameters.getParams();
-        assertEquals(0, params.size());
-    }
+        assertEquals("Data1", wrappingList.get(0).getName());
+        assertEquals("Data2", wrappingList.get(1).getName());
 
+
+        Object[] objectArray = wrappingList.toArray();
+        assertEquals(2, objectArray.length);
+        assertEquals("Data1", ((SampleMinimalView)objectArray[0]).getName());
+        assertEquals("Data2", ((SampleMinimalView)objectArray[1]).getName());
+
+        SampleMinimalView[] viewsArray = wrappingList.toArray(new SampleMinimalView[0]);
+        assertEquals(2, viewsArray.length);
+        assertEquals("Data1", viewsArray[0].getName());
+        assertEquals("Data2", viewsArray[1].getName());
+
+        viewsArray = wrappingList.toArray(new SampleMinimalView[4]);
+        assertEquals(4, viewsArray.length);
+        assertEquals("Data1", viewsArray[0].getName());
+        assertEquals("Data2", viewsArray[1].getName());
+        assertNull(viewsArray[2]);
+        assertNull(viewsArray[3]);
+
+    }
 
 }
