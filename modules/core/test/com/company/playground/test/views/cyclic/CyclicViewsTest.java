@@ -1,6 +1,6 @@
-package com.company.playground.core;
+package com.company.playground.test.views.cyclic;
 
-import com.company.playground.CyclicViewTestContainer;
+import com.company.playground.test.CyclicViewTestContainer;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.testsupport.TestContainer;
@@ -16,7 +16,7 @@ public class CyclicViewsTest {
     @ClassRule
     public static final TestContainer cont = CyclicViewTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CyclicViewsTest.class);
 
     @Before
     public void setUp()  {
@@ -24,7 +24,7 @@ public class CyclicViewsTest {
     }
 
     @Test(expected = ViewInitializationException.class)
-    public void test(){
+    public void testCyclicDependencyFailure(){
         cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
         Assert.fail("The test should fail on Initialization due to a cyclic view presence");
     }

@@ -34,7 +34,7 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
     @Override
     public boolean contains(Object o) {
-        return delegate.contains(((V)o).getOrigin());
+        return delegate.contains(((V) o).getOrigin());
     }
 
     @Override
@@ -51,7 +51,7 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
     public <V> V[] toArray(V[] a) {
         Object[] objects = delegate.toArray(new Object[a.length]);
         List collect = Arrays.stream(objects).map(e -> EntityViewWrapper.wrap((E) e, entityView)).collect(Collectors.toList());
-        return (V[])collect.toArray(a);
+        return (V[]) collect.toArray(a);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
     @Override
     public boolean remove(Object o) {
-        return delegate.remove(((V)o).getOrigin());
+        return delegate.remove(((V) o).getOrigin());
     }
 
     @Override
@@ -121,12 +121,12 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
     @Override
     public int indexOf(Object o) {
-        return delegate.indexOf(((BaseEntityView)o).getOrigin());
+        return delegate.indexOf(((BaseEntityView) o).getOrigin());
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        return delegate.lastIndexOf(((BaseEntityView)o).getOrigin());
+        return delegate.lastIndexOf(((BaseEntityView) o).getOrigin());
     }
 
     @Override

@@ -1,7 +1,7 @@
-package com.company.playground.core;
+package com.company.playground.test.views.wrapper;
 
-import com.company.playground.AppTestContainer;
 import com.company.playground.entity.SampleEntity;
+import com.company.playground.test.AppTestContainer;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithUserView;
@@ -31,7 +31,7 @@ public class WrapperTest {
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(WrapperTest.class);
 
     private Metadata metadata;
     private Persistence persistence;

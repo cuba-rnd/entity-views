@@ -1,4 +1,4 @@
-package com.company.playground;
+package com.company.playground.test;
 
 import com.haulmont.bali.util.Dom4j;
 import com.haulmont.cuba.testsupport.TestContainer;
@@ -17,7 +17,7 @@ public class CyclicViewTestContainer extends TestContainer {
                 "com.haulmont.cuba"
         ));
         appPropertiesFiles = Arrays.asList(
-                "com/company/playground/test/views/test-app.properties",
+                "com/company/playground/test/views/cyclic/test-app.properties",
                 "test-app.properties");
         initDbProperties();
     }

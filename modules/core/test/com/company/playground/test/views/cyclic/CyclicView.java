@@ -1,4 +1,4 @@
-package com.company.playground.test.views;
+package com.company.playground.test.views.cyclic;
 
 import com.company.playground.entity.SampleEntity;
 import com.haulmont.cuba.core.views.BaseEntityView;

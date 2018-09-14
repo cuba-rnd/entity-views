@@ -1,15 +1,10 @@
-package com.company.playground.core;
+package com.company.playground.test.views.wrapper;
 
-import com.company.playground.AppTestContainer;
 import com.company.playground.entity.SampleEntity;
+import com.company.playground.test.AppTestContainer;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.google.common.collect.Lists;
-import com.haulmont.bali.db.QueryRunner;
-import com.haulmont.cuba.core.Persistence;
-import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
-import com.haulmont.cuba.core.global.ViewSupportDataManager;
-import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.core.views.factory.WrappingList;
 import org.junit.After;
@@ -30,13 +25,10 @@ public class WrappingListTest {
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(WrappingListTest.class);
 
     private Metadata metadata;
-    private Persistence persistence;
-    private ViewSupportDataManager dataManager;
     private SampleEntity data1, data2;
-    private ViewsSupportEntityStates entityStates;
 
 
     @Before
@@ -46,9 +38,6 @@ public class WrappingListTest {
 
         cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
         metadata = cont.metadata();
-        persistence = cont.persistence();
-        dataManager = AppBeans.get(ViewSupportDataManager.class);
-        entityStates = AppBeans.get(ViewsSupportEntityStates.class);
 
         data1 = metadata.create(SampleEntity.class);
         data1.setName("Data1");
@@ -56,17 +45,10 @@ public class WrappingListTest {
         data2 = metadata.create(SampleEntity.class);
         data2.setName("Data2");
 
-        persistence.runInTransaction((em) -> {
-            em.persist(data1);
-            em.persist(data2);
-        });
     }
 
     @After
     public void tearDown() throws Exception {
-        QueryRunner runner = new QueryRunner(persistence.getDataSource());
-        runner.update("delete from PLAYGROUND_ENTITY_PARAMETER");
-        runner.update("delete from PLAYGROUND_SAMPLE_ENTITY");
     }
 
     @Test
@@ -95,7 +77,6 @@ public class WrappingListTest {
         assertEquals("Data2", viewsArray[1].getName());
         assertNull(viewsArray[2]);
         assertNull(viewsArray[3]);
-
     }
 
 }

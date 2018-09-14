@@ -14,6 +14,6 @@
     <!-- Annotation-based beans -->
     <context:component-scan base-package="com.company.playground"/>
 
-    <views:views base-packages="com.company.playground.test.views"/>
+    <views:views base-packages="com.company.playground.test.views.cyclic"/>
 
 </beans>

@@ -1,4 +1,4 @@
-package com.company.playground;
+package com.company.playground.test;
 
 import com.haulmont.bali.util.Dom4j;
 import com.haulmont.cuba.testsupport.TestContainer;

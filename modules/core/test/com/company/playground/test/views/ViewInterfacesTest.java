@@ -1,7 +1,7 @@
-package com.company.playground.core;
+package com.company.playground.test.views;
 
-import com.company.playground.AppTestContainer;
 import com.company.playground.entity.SampleEntity;
+import com.company.playground.test.AppTestContainer;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;

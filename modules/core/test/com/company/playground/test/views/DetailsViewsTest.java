@@ -1,8 +1,8 @@
-package com.company.playground.core;
+package com.company.playground.test.views;
 
-import com.company.playground.AppTestContainer;
 import com.company.playground.entity.EntityParameter;
 import com.company.playground.entity.SampleEntity;
+import com.company.playground.test.AppTestContainer;
 import com.company.playground.views.sample.ParameterNameOnly;
 import com.company.playground.views.sample.SampleWithParameters;
 import com.haulmont.bali.db.QueryRunner;
@@ -12,6 +12,7 @@ import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -30,7 +31,7 @@ public class DetailsViewsTest {
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DetailsViewsTest.class);
 
     private Metadata metadata;
     private Persistence persistence;
@@ -101,6 +102,35 @@ public class DetailsViewsTest {
         List<ParameterNameOnly> params = sampleWithParameters.getParams();
         assertEquals(0, params.size());
     }
+
+    @Test
+    public void testAddChild() {
+        SampleWithParameters parent = dataManager
+                .loadWithView(SampleWithParameters.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data1")
+                .list().get(0);
+        assertEquals(2, parent.getParams().size());
+
+        EntityParameter child = metadata.create(EntityParameter.class);
+        child.setName("Param3");
+        child.setSampleEntity(parent.getOrigin());
+        parent.getParams().add(EntityViewWrapper.wrap(child, ParameterNameOnly.class));
+        assertEquals(3, parent.getParams().size());
+
+        dataManager.commit(child);
+
+        parent = dataManager
+                .loadWithView(SampleWithParameters.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data1")
+                .list().get(0);
+        List<ParameterNameOnly> children = parent.getParams();
+        children.sort(Comparator.comparing(ParameterNameOnly::getName));
+        assertEquals(3, children.size());
+        assertEquals("Param3", children.get(2).getName());
+    }
+
 
 
 }

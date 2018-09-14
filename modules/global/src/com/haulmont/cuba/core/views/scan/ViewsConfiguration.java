@@ -138,7 +138,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
             Class<?> fieldViewInterface = getReturnViewType(viewMethod);
             log.trace("Method {} return type {}", viewMethod.getName(), fieldViewInterface);
 
-            if (BaseEntityView.class.isAssignableFrom(fieldViewInterface)) {//TODO need to add fetch handling
+            if (BaseEntityView.class.isAssignableFrom(fieldViewInterface)) {
                 ViewInterfaceInfo refFieldInterfaceInfo = viewInterfaceDefinitions.get(fieldViewInterface);
 
                 if (refFieldInterfaceInfo == null)
@@ -167,6 +167,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
                 ParameterizedType type = (ParameterizedType) genericReturnType;
                 List<Class<?>> collectionTypes = Arrays.stream(type.getActualTypeArguments())
                         .map(t -> ReflectionHelper.getClass(t.getTypeName())).collect(Collectors.toList());
+                //TODO make this code a bit more accurate
                 if (collectionTypes.stream().anyMatch(BaseEntityView.class::isAssignableFrom)){
                     return collectionTypes.stream().filter(BaseEntityView.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
                 } else {
