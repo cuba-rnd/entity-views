@@ -31,5 +31,7 @@
           name="sampleEntity-children-view">
         <property name="params"
                   view="_minimal"/>
+        <property name="compParams"
+                  view="_minimal"/>
     </view>
 </views>

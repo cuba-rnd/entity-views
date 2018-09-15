@@ -53,4 +53,8 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
         return EntityViewWrapper.wrap(savedEntity, targetView);
     }
 
+    @Override
+    public <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> void remove(V entityView) {
+        remove(entityView.getOrigin());
+    }
 }

@@ -10,7 +10,6 @@ import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
-import com.haulmont.cuba.core.global.ViewsSupportEntityStates;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import org.junit.After;
@@ -36,9 +35,8 @@ public class DetailsViewsTest {
     private Metadata metadata;
     private Persistence persistence;
     private ViewSupportDataManager dataManager;
-    private SampleEntity data1, data2;
-    private EntityParameter param1, param2;
-    private ViewsSupportEntityStates entityStates;
+    private SampleEntity data1, data2, data3;
+    private EntityParameter param1, param2, param3, param4;
 
 
     @Before
@@ -50,7 +48,6 @@ public class DetailsViewsTest {
         metadata = cont.metadata();
         persistence = cont.persistence();
         dataManager = AppBeans.get(ViewSupportDataManager.class);
-        entityStates = AppBeans.get(ViewsSupportEntityStates.class);
 
         data1 = metadata.create(SampleEntity.class);
         data1.setName("Data1");
@@ -66,11 +63,27 @@ public class DetailsViewsTest {
         data2 = metadata.create(SampleEntity.class);
         data2.setName("Data2");
 
+        data3 = metadata.create(SampleEntity.class);
+        data3.setName("Data3");
+
+        param3 = metadata.create(EntityParameter.class);
+        param3.setName("Param3");
+        param3.setCompEntity(data3);
+
+        param4 = metadata.create(EntityParameter.class);
+        param4.setName("Param4");
+        param4.setCompEntity(data3);
+
+
+
         persistence.runInTransaction((em) -> {
             em.persist(data1);
             em.persist(param1);
             em.persist(param2);
             em.persist(data2);
+            em.persist(data3);
+            em.persist(param3);
+            em.persist(param4);
         });
     }
 
@@ -82,7 +95,7 @@ public class DetailsViewsTest {
     }
 
     @Test
-    public void testMasterDetails(){
+    public void testMasterDetailsComposition(){
         SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1")
@@ -131,6 +144,30 @@ public class DetailsViewsTest {
         assertEquals("Param3", children.get(2).getName());
     }
 
+    @Test
+    public void testComposition(){
+        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data3")
+                .list().get(0);
+        List<ParameterNameOnly> params = sampleWithParameters.getCompParams();
+        assertEquals(2, params.size());
+        assertTrue(params.get(0).getName().equals("Param3") || params.get(1).getName().equals("Param3"));
+    }
 
+    @Test
+    public void testDeleteComposition(){
+        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data3")
+                .list().get(0);
+        dataManager.remove(sampleWithParameters);
+
+        List<SampleWithParameters> testList = dataManager.loadWithView(SampleWithParameters.class)
+                .query("select e from playground$SampleEntity e where e.name = :name")
+                .parameter("name", "Data3")
+                .list();
+        assertEquals(0, testList.size());
+    }
 
 }

@@ -1,7 +1,10 @@
 package com.company.playground.entity;
 
+import com.haulmont.chile.core.annotations.Composition;
 import com.haulmont.chile.core.annotations.NamePattern;
 import com.haulmont.cuba.core.entity.StandardEntity;
+import com.haulmont.cuba.core.entity.annotation.OnDelete;
+import com.haulmont.cuba.core.global.DeletePolicy;
 import com.haulmont.cuba.security.entity.User;
 
 import javax.persistence.Column;
@@ -34,6 +37,20 @@ public class SampleEntity extends StandardEntity {
 
     @OneToMany(mappedBy = "sampleEntity")
     protected List<EntityParameter> params;
+
+    @Composition
+    @OnDelete(DeletePolicy.CASCADE)
+    @OneToMany(mappedBy = "compEntity")
+    protected List<EntityParameter> compParams;
+
+    public void setCompParams(List<EntityParameter> compParams) {
+        this.compParams = compParams;
+    }
+
+    public List<EntityParameter> getCompParams() {
+        return compParams;
+    }
+
 
     public void setParams(List<EntityParameter> params) {
         this.params = params;

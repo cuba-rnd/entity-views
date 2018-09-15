@@ -13,4 +13,6 @@ public interface SampleWithParameters extends BaseEntityView<SampleEntity> {
 
     List<ParameterNameOnly> getParams();
 
+    List<ParameterNameOnly> getCompParams();
+
 }

@@ -27,6 +27,19 @@ public class EntityParameter extends StandardEntity {
     @JoinColumn(name = "SAMPLE_ENTITY_ID")
     protected SampleEntity sampleEntity;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "COMP_ENTITY_ID")
+    protected SampleEntity compEntity;
+
+    public void setCompEntity(SampleEntity compEntity) {
+        this.compEntity = compEntity;
+    }
+
+    public SampleEntity getCompEntity() {
+        return compEntity;
+    }
+
+
     public void setSampleEntity(SampleEntity sampleEntity) {
         this.sampleEntity = sampleEntity;
     }

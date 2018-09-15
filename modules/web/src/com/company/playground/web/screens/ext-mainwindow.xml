@@ -10,14 +10,6 @@
         <split id="foldersSplit">
             <main:workArea id="workArea">
                 <main:initialLayout>
-                    <groupBox caption="scan"
-                              spacing="true">
-                        <hbox spacing="true">
-                            <button id="checkProxyBtn"
-                                    caption="Check Proxy"
-                                    invoke="onCheckProxyBtnClick"/>
-                        </hbox>
-                    </groupBox>
                 </main:initialLayout>
             </main:workArea>
         </split>

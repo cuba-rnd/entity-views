@@ -35,6 +35,7 @@ create table PLAYGROUND_ENTITY_PARAMETER (
     NAME varchar(255),
     PARAM_VALUE bigint,
     SAMPLE_ENTITY_ID uuid,
+    COMP_ENTITY_ID uuid,
     --
     primary key (ID)
 )^
