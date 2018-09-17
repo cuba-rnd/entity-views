@@ -1,6 +1,7 @@
 package com.haulmont.cuba.core.views.factory;
 
 
+import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.cuba.core.config.ConfigHandler;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.AppBeans;
@@ -19,8 +20,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
@@ -52,6 +58,31 @@ public class EntityViewWrapper {
         return (V) Proxy.newProxyInstance(entity.getClass().getClassLoader()
                 , new Class<?>[]{effectiveView}
                 , interfaceInvocationHandler);
+    }
+
+    /**
+     * Returns actual method return type or collection parameter type for one-to-many
+     * relation attributes. Used for building CUBA views based on entity views.
+     * @param viewMethod method to be used in CUBA view.
+     * @return type that will be used in CUBA view.
+     */
+    public static Class<?> getReturnViewType(Method viewMethod) {
+        Class<?> returnType = viewMethod.getReturnType();
+        if (Collection.class.isAssignableFrom(returnType)) {
+            Type genericReturnType = viewMethod.getGenericReturnType();
+            if (genericReturnType instanceof ParameterizedType) {
+                ParameterizedType type = (ParameterizedType) genericReturnType;
+                List<Class<?>> collectionTypes = Arrays.stream(type.getActualTypeArguments())
+                        .map(t -> ReflectionHelper.getClass(t.getTypeName())).collect(Collectors.toList());
+                //TODO make this code a bit more accurate
+                if (collectionTypes.stream().anyMatch(BaseEntityView.class::isAssignableFrom)){
+                    return collectionTypes.stream().filter(BaseEntityView.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
+                } else {
+                    return collectionTypes.stream().findFirst().orElseThrow(RuntimeException::new);
+                }
+            }
+        }
+        return returnType;
     }
 
     /**
@@ -253,7 +284,8 @@ public class EntityViewWrapper {
         }
 
         /**
-         * Wraps method invocation result into entity view if needed.
+         * Wraps method invocation result into entity view if needed. For collections returns
+         * wrapping collection that wraps every element into entity view.
          *
          * @param method       Method to be invoked.
          * @param entityMethod Effective entity method to be wrapped.
@@ -264,9 +296,9 @@ public class EntityViewWrapper {
             if (result == null) {
                 return null;
             }
-            if (result instanceof List) {
+            if (result instanceof List) {//TODO we need to cover Set and Collection here
                 ViewsConfiguration viewsConfiguration = AppBeans.get(ViewsConfiguration.class);
-                Class<?> returnType = viewsConfiguration.getReturnViewType(method);
+                Class<?> returnType = getReturnViewType(method);
                 log.trace("Method {} return type {}", method, returnType);
                 return new WrappingList((List<Entity>)result, returnType);
             }

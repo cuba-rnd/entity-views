@@ -11,6 +11,12 @@ import java.util.ListIterator;
 import java.util.stream.Collectors;
 
 
+/**
+ * List that wraps its elements - entities into entity views. Implemented for
+ * one-to-many relationship implementation.
+ * @param <E> entity type.
+ * @param <V> entity view type.
+ */
 public class WrappingList<E extends Entity, V extends BaseEntityView<E>> implements List<V> {
 
     private List<E> delegate;

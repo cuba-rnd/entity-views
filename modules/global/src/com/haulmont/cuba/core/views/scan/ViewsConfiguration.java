@@ -1,12 +1,12 @@
 package com.haulmont.cuba.core.views.scan;
 
 import com.google.common.collect.ImmutableSet;
-import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.chile.core.annotations.MetaProperty;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -17,13 +17,9 @@ import org.springframework.context.ApplicationListener;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,7 +131,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         log.trace("View for: {} is created: {}", effectiveView.getName(), result);
         viewInterfaceMethods.forEach(viewMethod -> {
             log.trace("Checking is a method {} refers an entity with a certain view", viewMethod.getName());
-            Class<?> fieldViewInterface = getReturnViewType(viewMethod);
+            Class<?> fieldViewInterface = EntityViewWrapper.getReturnViewType(viewMethod);
             log.trace("Method {} return type {}", viewMethod.getName(), fieldViewInterface);
 
             if (BaseEntityView.class.isAssignableFrom(fieldViewInterface)) {
@@ -157,25 +153,6 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
             }
         });
         return result;
-    }
-
-    public Class<?> getReturnViewType(Method viewMethod) {
-        Class<?> returnType = viewMethod.getReturnType();
-        if (Collection.class.isAssignableFrom(returnType)) {
-            Type genericReturnType = viewMethod.getGenericReturnType();
-            if (genericReturnType instanceof ParameterizedType) {
-                ParameterizedType type = (ParameterizedType) genericReturnType;
-                List<Class<?>> collectionTypes = Arrays.stream(type.getActualTypeArguments())
-                        .map(t -> ReflectionHelper.getClass(t.getTypeName())).collect(Collectors.toList());
-                //TODO make this code a bit more accurate
-                if (collectionTypes.stream().anyMatch(BaseEntityView.class::isAssignableFrom)){
-                    return collectionTypes.stream().filter(BaseEntityView.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
-                } else {
-                    return collectionTypes.stream().findFirst().orElseThrow(RuntimeException::new);
-                }
-            }
-        }
-        return returnType;
     }
 
     /**
