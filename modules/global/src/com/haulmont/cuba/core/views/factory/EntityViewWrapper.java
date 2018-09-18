@@ -46,7 +46,7 @@ public class EntityViewWrapper {
      * @return Proxy that implements entity view interface of class <code>V</code>
      */
     public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
-        if (entity == null){
+        if (entity == null) {
             return null;
         }
         log.trace("Wrapping entity: {} to view: {}", entity, viewInterface);
@@ -63,6 +63,7 @@ public class EntityViewWrapper {
     /**
      * Returns actual method return type or collection parameter type for one-to-many
      * relation attributes. Used for building CUBA views based on entity views.
+     *
      * @param viewMethod method to be used in CUBA view.
      * @return type that will be used in CUBA view.
      */
@@ -75,7 +76,7 @@ public class EntityViewWrapper {
                 List<Class<?>> collectionTypes = Arrays.stream(type.getActualTypeArguments())
                         .map(t -> ReflectionHelper.getClass(t.getTypeName())).collect(Collectors.toList());
                 //TODO make this code a bit more accurate
-                if (collectionTypes.stream().anyMatch(BaseEntityView.class::isAssignableFrom)){
+                if (collectionTypes.stream().anyMatch(BaseEntityView.class::isAssignableFrom)) {
                     return collectionTypes.stream().filter(BaseEntityView.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
                 } else {
                     return collectionTypes.stream().findFirst().orElseThrow(RuntimeException::new);
@@ -256,19 +257,18 @@ public class EntityViewWrapper {
          * @return Method instance if the class contain its definition.
          */
         private Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
-            try {
-                Method entityMethod = delegateToClass.getMethod(delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
+            Method entityMethod = MethodUtils.getMatchingMethod(delegateToClass, delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
+
+            if (entityMethod != null) {
 
                 if (delegateFromMethod.getReturnType().isAssignableFrom(entityMethod.getReturnType()))
                     return entityMethod;
 
                 if (isWrappable(delegateFromMethod, entityMethod))
                     return entityMethod;
-
-                return null;
-            } catch (NoSuchMethodException e) {
-                return null;
             }
+
+            return null;
         }
 
         /**
@@ -300,7 +300,7 @@ public class EntityViewWrapper {
                 ViewsConfiguration viewsConfiguration = AppBeans.get(ViewsConfiguration.class);
                 Class<?> returnType = getReturnViewType(method);
                 log.trace("Method {} return type {}", method, returnType);
-                return new WrappingList((List<Entity>)result, returnType);
+                return new WrappingList((List<Entity>) result, returnType);
             }
             if (isWrappable(method, entityMethod)) {
                 //noinspection unchecked

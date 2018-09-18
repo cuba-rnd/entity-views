@@ -2,30 +2,42 @@ package com.haulmont.cuba.core.views.factory;
 
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.views.BaseEntityView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
 /**
  * List that wraps its elements - entities into entity views. Implemented for
  * one-to-many relationship implementation.
+ *
  * @param <E> entity type.
  * @param <V> entity view type.
  */
 public class WrappingList<E extends Entity, V extends BaseEntityView<E>> implements List<V> {
 
+    private static final Logger log = LoggerFactory.getLogger(WrappingList.class);
+
     private List<E> delegate;
 
     private Class<V> entityView;
 
+    private transient Map<E, V> entityViewsCache;
+
     public WrappingList(List<E> delegate, Class<V> entityView) {
         this.delegate = delegate;
         this.entityView = entityView;
+        entityViewsCache = new HashMap<>(delegate.size());
     }
 
     @Override
@@ -50,24 +62,28 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
     @Override
     public Object[] toArray() {
-        return delegate.stream().map(e -> EntityViewWrapper.wrap(e, entityView)).toArray();
+        return delegate.stream().map(e -> wrapElement(e)).toArray();
     }
 
     @Override
     public <V> V[] toArray(V[] a) {
         Object[] objects = delegate.toArray(new Object[a.length]);
-        List collect = Arrays.stream(objects).map(e -> EntityViewWrapper.wrap((E) e, entityView)).collect(Collectors.toList());
+        List collect = Arrays.stream(objects).map(e -> wrapElement((E) e)).collect(Collectors.toList());
         return (V[]) collect.toArray(a);
     }
 
     @Override
     public boolean add(V v) {
-        return delegate.add(v.getOrigin());
+        E origin = v.getOrigin();
+        entityViewsCache.put(origin, v);
+        return delegate.add(origin);
     }
 
     @Override
     public boolean remove(Object o) {
-        return delegate.remove(((V) o).getOrigin());
+        E origin = ((V) o).getOrigin();
+        entityViewsCache.remove(origin);
+        return delegate.remove(origin);
     }
 
     @Override
@@ -78,51 +94,71 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
     @Override
     public boolean addAll(Collection<? extends V> c) {
-        Collection<E> unwrapped = c.stream().map(BaseEntityView::getOrigin).collect(Collectors.toList());
+        Collection<E> unwrapped = c.stream().map(v -> {
+            entityViewsCache.put(v.getOrigin(), v);
+            return v.getOrigin();
+        }).collect(Collectors.toList());
         return delegate.addAll(unwrapped);
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        Collection unwrapped = c.stream().map(e -> ((BaseEntityView) e).getOrigin()).collect(Collectors.toList());
+        Collection unwrapped = c.stream().map(e -> {
+            BaseEntityView entityView = (BaseEntityView) e;
+            Entity origin = entityView.getOrigin();
+            entityViewsCache.remove(origin);
+            return origin;
+        }).collect(Collectors.toList());
         return delegate.removeAll(unwrapped);
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
         Collection unwrapped = c.stream().map(e -> ((BaseEntityView) e).getOrigin()).collect(Collectors.toList());
+        Set<E> keysToRemove = new HashSet<>(entityViewsCache.keySet());
+        keysToRemove.removeAll(unwrapped);
+        keysToRemove.forEach(e -> entityViewsCache.remove(e));
         return delegate.retainAll(unwrapped);
     }
 
     @Override
     public void clear() {
+        entityViewsCache.clear();
         delegate.clear();
     }
 
     @Override
     public boolean addAll(int index, Collection<? extends V> c) {
-        Collection<E> unwrapped = c.stream().map(BaseEntityView::getOrigin).collect(Collectors.toList());
+        Collection<E> unwrapped = c.stream().map(v -> {
+            entityViewsCache.put(v.getOrigin(), v);
+            return v.getOrigin();
+        }).collect(Collectors.toList());
         return delegate.addAll(index, unwrapped);
     }
 
     @Override
     public V get(int index) {
-        return EntityViewWrapper.wrap(delegate.get(index), entityView);
+        return wrapElement(delegate.get(index));
     }
 
     @Override
     public V set(int index, V element) {
-        return EntityViewWrapper.wrap(delegate.set(index, element.getOrigin()), entityView);
+        return wrapElement(delegate.set(index, element.getOrigin()));
     }
 
     @Override
     public void add(int index, V element) {
-        delegate.set(index, element.getOrigin());
+        E origin = element.getOrigin();
+        entityViewsCache.put(origin, element);
+        delegate.add(index, origin);
     }
 
     @Override
     public V remove(int index) {
-        return EntityViewWrapper.wrap(delegate.remove(index), entityView);
+        E element = delegate.remove(index);
+        V v = wrapElement(element);
+        entityViewsCache.remove(element);
+        return v;
     }
 
     @Override
@@ -150,9 +186,19 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
         return new WrappingList<>(delegate.subList(fromIndex, toIndex), entityView);
     }
 
+    private V wrapElement(E element) {
+        return entityViewsCache.computeIfAbsent(element, e -> {
+            log.trace("Wrapping {} and caching it", e);
+            return EntityViewWrapper.wrap(e, entityView);
+        });
+    }
+
+
     class WrappingListIterator implements ListIterator<V> {
 
         private ListIterator<E> delegate;
+
+        private E lastExtracted = null; //We need it to handle remove() properly.
 
         public WrappingListIterator(ListIterator<E> delegate) {
             this.delegate = delegate;
@@ -165,7 +211,9 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
         @Override
         public V next() {
-            return EntityViewWrapper.wrap(delegate.next(), entityView);
+            E next = delegate.next();
+            lastExtracted = next;
+            return wrapElement(next);
         }
 
         @Override
@@ -175,7 +223,9 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
         @Override
         public V previous() {
-            return EntityViewWrapper.wrap(delegate.previous(), entityView);
+            E previous = delegate.previous();
+            lastExtracted = previous;
+            return wrapElement(previous);
         }
 
         @Override
@@ -190,17 +240,22 @@ public class WrappingList<E extends Entity, V extends BaseEntityView<E>> impleme
 
         @Override
         public void remove() {
+            entityViewsCache.remove(lastExtracted);
             delegate.remove();
         }
 
         @Override
         public void set(V v) {
-            delegate.set(v.getOrigin());
+            E origin = v.getOrigin();
+            entityViewsCache.put(origin, v);
+            delegate.set(origin);
         }
 
         @Override
         public void add(V v) {
-            delegate.add(v.getOrigin());
+            E origin = v.getOrigin();
+            entityViewsCache.put(origin, v);
+            delegate.add(origin);
         }
     }
 

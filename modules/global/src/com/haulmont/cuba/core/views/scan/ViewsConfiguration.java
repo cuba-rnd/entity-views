@@ -11,11 +11,15 @@ import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.support.BeanDefinitionValidationException;
 import org.springframework.context.ApplicationListener;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -188,19 +192,16 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
     }
 
     private String methodName2FieldName(Method method) throws ViewInitializationException {
-        String name = method.getName();
-
-        if (name.startsWith("get") && method.getParameterTypes().length == 0)
-            return StringUtils.uncapitalize(name.substring(3));
-
-        if (name.startsWith("is") && method.getParameterTypes().length == 0)
-            return StringUtils.uncapitalize(name.substring(2));
-
-        if (name.startsWith("set") && method.getParameterTypes().length == 1)
-            return StringUtils.uncapitalize(name.substring(3));
-
-        throw new ViewInitializationException(String.format("Method %s of view interface %s doesn't comply with access fields convention (setter or getter)",
-                name, method.getClass().getName()));
+        try {
+            PropertyDescriptor propertyDescriptor = BeanUtils.findPropertyForMethod(method);
+            if (propertyDescriptor == null) {
+                throw new BeanDefinitionValidationException(String.format("Method %s is not an accessor method", method.getName()));
+            }
+            return propertyDescriptor.getName();
+        } catch (BeansException e) {
+            throw new ViewInitializationException(String.format("Method %s of view interface %s doesn't comply with access fields convention (setter or getter)",
+                    method.getName(), method.getClass().getName()), e);
+        }
     }
 
     /**
