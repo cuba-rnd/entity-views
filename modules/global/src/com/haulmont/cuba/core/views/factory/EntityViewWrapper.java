@@ -257,7 +257,7 @@ public class EntityViewWrapper {
          * @return Method instance if the class contain its definition.
          */
         private Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
-            Method entityMethod = MethodUtils.getMatchingMethod(delegateToClass, delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
+            Method entityMethod = MethodUtils.getAccessibleMethod(delegateToClass, delegateFromMethod.getName(), delegateFromMethod.getParameterTypes());
 
             if (entityMethod != null) {
 
@@ -297,7 +297,6 @@ public class EntityViewWrapper {
                 return null;
             }
             if (result instanceof List) {//TODO we need to cover Set and Collection here
-                ViewsConfiguration viewsConfiguration = AppBeans.get(ViewsConfiguration.class);
                 Class<?> returnType = getReturnViewType(method);
                 log.trace("Method {} return type {}", method, returnType);
                 return new WrappingList((List<Entity>) result, returnType);
