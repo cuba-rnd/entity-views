@@ -32,11 +32,11 @@ public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
 
     /**
      * Applies new view interface to an underlying entity. Current implementation may relod entity and
-     * does not commit changes neither throws any exceptions, so if you transform modified entity, all changes will be lost.
+     * does not commit changes neither throws any exceptions, so if you reload modified entity, all changes will be lost.
      * @param targetView view class that should be applied to underlying entity.
      * @param <V> target view instance class.
      * @return target view instance with the same underlying entity.
      */
-    <V extends BaseEntityView<T>> V transform(Class<V> targetView);
+    <V extends BaseEntityView<T>> V reload(Class<V> targetView);
 
 }

@@ -26,12 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
 
-public class WrapperTest {
+public class EntityWrapperTest {
 
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(WrapperTest.class);
+    private static final Logger log = LoggerFactory.getLogger(EntityWrapperTest.class);
 
     private Metadata metadata;
     private Persistence persistence;

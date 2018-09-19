@@ -6,6 +6,7 @@ import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
 import com.haulmont.cuba.client.testsupport.CubaClientTestCase;
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
 import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.core.views.scan.ViewsConfiguration;
@@ -32,6 +33,7 @@ public class ViewInterfaceTest extends CubaClientTestCase {
 
         new NonStrictExpectations(){{
             AppBeans.get(ViewsConfiguration.class); result = viewsConfiguration;
+            AppBeans.get(EntityStates.class); result = new EntityStates();
         }};
 
 

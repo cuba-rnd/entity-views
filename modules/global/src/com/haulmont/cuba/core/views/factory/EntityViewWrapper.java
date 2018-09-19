@@ -94,14 +94,18 @@ public class EntityViewWrapper {
      */
     static class ViewInterfaceInvocationHandler<E extends Entity, V extends BaseEntityView<E>> implements InvocationHandler, Serializable {
 
-        private final E entity;
+        private E entity;
+        private boolean needReload;
         private final Class<V> viewInterface;
+        private final View view;
 
         //Internals look similar to com.haulmont.cuba.core.views.scan.ViewsConfiguration.ViewInterfaceInfo
         //Should we think about merging these classes code somehow?
         ViewInterfaceInvocationHandler(E entity, Class<V> viewInterface) {
             this.entity = entity;
             this.viewInterface = viewInterface;
+            view = AppBeans.get(ViewsConfiguration.class).getViewByInterface(viewInterface);
+            this.needReload = !AppBeans.get(EntityStates.class).isLoadedWithView(entity, view);
         }
 
         /**
@@ -111,20 +115,25 @@ public class EntityViewWrapper {
         public Object invoke(Object proxy, Method method, Object[] args)
                 throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-            final String methodName = method.getName();
-
             //Check if we should execute base interface method
             Method baseEntityViewMethod = getDelegateMethodCandidate(method, BaseEntityView.class);
             if (baseEntityViewMethod != null) {
                 return executeBaseEntityMethod(proxy, args, baseEntityViewMethod);
             }
 
-            //Check if we should execute origin entity method
-            //Setter
-            if (isSetterWithView(method, args)) {
-                return MethodUtils.invokeMethod(entity, methodName, ((BaseEntityView) args[0]).getOrigin());
+            //We need to reload entity only in case we need to call its properties
+            if (needReload) {
+                log.trace("Reloading entity {} using view {}", entity, view);
+                DataManager dm = AppBeans.get(DataManager.class);
+                entity = dm.reload(entity, view);
+                needReload = false;
             }
-            //Or getter or another method
+            //Check if we should execute origin entity method
+            //Setters should be invoked directly
+            if (isSetterWithView(method, args)) {
+                return MethodUtils.invokeMethod(entity, method.getName(), ((BaseEntityView) args[0]).getOrigin());
+            }
+            //Results of getters or another methods will be wrapped
             Method entityMethod = getDelegateMethodCandidate(method, entity.getClass());
             if (entityMethod != null) {
                 return executeEntityMethod(method, args, entityMethod);
@@ -164,9 +173,9 @@ public class EntityViewWrapper {
             log.trace("Invoking method {} from BaseEntityView", methodName);
             if ("getOrigin".equals(methodName)) {
                 return entity;
-            } else if ("transform".equals(methodName)) {
+            } else if ("reload".equals(methodName)) {
                 //noinspection unchecked
-                return transform(viewInterface, (Class) args[0], proxy);
+                return reload((Class) args[0], proxy);
             } else if ("getInterfaceClass".equals(methodName)) {
                 return viewInterface;
             } else {
@@ -175,30 +184,20 @@ public class EntityViewWrapper {
         }
 
         /**
-         * Implementation of the {@link BaseEntityView#transform(Class)}. Does not reload entity from data store if
-         * we transform to a "parent" interface.
+         * Implementation of the {@link BaseEntityView#reload(Class)}. Does not reload entity from data store if
+         * we reload to a "parent" interface.
          *
-         * @param currentViewInterface Source interface class.
          * @param newViewInterface     Target interface class.
          * @param proxy                Current Entity View interface instance.
          * @param <T>                  Target interface class.
          * @return Target interface instance.
          */
-        private <T extends BaseEntityView> T transform(Class<? extends BaseEntityView> currentViewInterface, Class<T> newViewInterface, Object proxy) {
-            if (currentViewInterface.isAssignableFrom(newViewInterface))
+        private <T extends BaseEntityView> T reload(Class<T> newViewInterface, Object proxy) {
+            if (viewInterface.isAssignableFrom(newViewInterface))
                 //noinspection unchecked
                 return (T) proxy;
-
-            EntityStates entityStates = AppBeans.get(EntityStates.class);
-            ViewsConfiguration vc = AppBeans.get(ViewsConfiguration.class);
-            View newView = vc.getViewByInterface(newViewInterface);
-            Entity e = entity;
-            if (!entityStates.isLoadedWithView(entity, newView)) {
-                DataManager dm = AppBeans.get(DataManager.class);
-                e = dm.reload(entity, newView);//TODO need to provide consistent behaviour for transform()
-            }
             //noinspection unchecked
-            return (T) wrap(e, newViewInterface);
+            return (T) wrap(entity, newViewInterface);
         }
 
         /**
