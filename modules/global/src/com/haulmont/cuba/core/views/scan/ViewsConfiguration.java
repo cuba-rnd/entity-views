@@ -6,15 +6,21 @@ import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.core.views.BaseEntityView;
+import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.core.views.scan.exception.ViewInitializationException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.support.BeanDefinitionValidationException;
 import org.springframework.context.ApplicationListener;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,6 +88,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
 
     /**
      * Checks if a method is a candidate for a CUBA view property.
+     *
      * @param m Candidate method instance.
      * @return True if the method fits.
      */
@@ -93,8 +100,9 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
     /**
      * Recursively creates CUBA view definition based on entity view interface contract taking into account views
      * substitution.
+     *
      * @param viewInterface Entity views interface class.
-     * @param visited Set of processed entity view classes. We need it to prevent cyclic references.
+     * @param visited       Set of processed entity view classes. We need it to prevent cyclic references.
      * @return CUBA view definition.
      * @throws ViewInitializationException Throws exception in case of a cyclic reference or bad parent view reference.
      */
@@ -103,8 +111,6 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         log.trace("Creating view for: {}", viewInterface.getName());
 
         Class<? extends BaseEntityView> effectiveView = getEffectiveView(viewInterface);
-
-        log.trace("Effective view that replaces: {} is: ", viewInterface.getName(), effectiveView.getName());
 
         ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(effectiveView);
         //Preventing cyclic reference
@@ -115,25 +121,33 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         }
 
         Set<Method> baseEntityViewMethods = Arrays.stream(BaseEntityView.class.getMethods()).collect(Collectors.toSet());
-        //compose view only by getters
-        //TODO check methods to have delegatable method in entity (if returns another view interface check that the entity has a reference to another entity)
+        //compose view only by getters and exclude default interface methods
         Set<Method> viewInterfaceMethods = Arrays.stream(effectiveView.getMethods())
                 .filter(ViewsConfiguration::isMethodCandidate)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+
         // skip utility methods from BaseEntityView
         viewInterfaceMethods.removeAll(baseEntityViewMethods);
 
-
         View result = new View(viewInterfaceInfo.getEntityClass(), viewInterfaceInfo.getViewName());
         viewInterfaceInfo.setView(result);
-
-        log.trace("View for: {} is created: {}", effectiveView.getName(), result);
-
+        log.trace("View for: {} is created: {}, adding properties", effectiveView.getName(), result.getName());
         viewInterfaceMethods.forEach(viewMethod -> {
-            log.trace("Checking is a method {} refers an entity with a certain view", viewMethod);
-            if (BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType())) {
-                //noinspection unchecked
-                Class<BaseEntityView> fieldViewInterface = (Class<BaseEntityView>) viewMethod.getReturnType();
+            //Check methods to have delegatable method in entity
+            // (if returns another view interface check that the entity has a reference to another entity)
+            if (MethodUtils.getAccessibleMethod(viewInterfaceInfo.entityClass, viewMethod.getName(), viewMethod.getParameterTypes()) == null) {
+                throw new ViewInitializationException(
+                        String.format("Method %s is not found in corresponding entity class %s"
+                                , viewMethod
+                                , viewInterfaceInfo.entityClass));
+            }
+
+            Class<?> fieldViewInterface = EntityViewWrapper.getReturnViewType(viewMethod);
+            log.trace("Method {} return type {}", viewMethod.getName(), fieldViewInterface);
+
+            log.trace("Checking if a method {} refers an entity with a certain view", viewMethod.getName());
+            if (BaseEntityView.class.isAssignableFrom(fieldViewInterface)) {
+
                 ViewInterfaceInfo refFieldInterfaceInfo = viewInterfaceDefinitions.get(fieldViewInterface);
 
                 if (refFieldInterfaceInfo == null)
@@ -156,6 +170,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
 
     /**
      * Returns effective entity view class based on entity view substitution chain.
+     *
      * @param viewInterface Initial view interface type that we want to return in our code.
      * @return Effective entity view class.
      */
@@ -171,12 +186,14 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
 
     /**
      * Adds a property to a CUBA view.
+     *
      * @param targetView View to be modified.
-     * @param propName Property name.
-     * @param propView View for complex property type.
+     * @param propName   Property name.
+     * @param propView   View for complex property type.
      */
     //TODO support fetch mode and lazy fetching
     private void addProperty(View targetView, String propName, @Nullable View propView) {
+        log.trace("Adding property {} to view {}", propName, targetView.getName());
         if (!targetView.containsProperty(propName)) {
             if (propView == null) {
                 targetView.addProperty(propName);
@@ -187,23 +204,21 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
     }
 
     private String methodName2FieldName(Method method) throws ViewInitializationException {
-        String name = method.getName();
-
-        if (name.startsWith("get") && method.getParameterTypes().length == 0)
-            return StringUtils.uncapitalize(name.substring(3));
-
-        if (name.startsWith("is") && method.getParameterTypes().length == 0)
-            return StringUtils.uncapitalize(name.substring(2));
-
-        if (name.startsWith("set") && method.getParameterTypes().length == 1)
-            return StringUtils.uncapitalize(name.substring(3));
-
-        throw new ViewInitializationException(String.format("Method %s of view interface %s doesn't comply with access fields convention (setter or getter)",
-                name, method.getClass().getName()));
+        try {
+            PropertyDescriptor propertyDescriptor = BeanUtils.findPropertyForMethod(method);
+            if (propertyDescriptor == null) {
+                throw new BeanDefinitionValidationException(String.format("Method %s is not an accessor method", method.getName()));
+            }
+            return propertyDescriptor.getName();
+        } catch (BeansException e) {
+            throw new ViewInitializationException(String.format("Method %s of view interface %s doesn't comply with access fields convention (setter or getter)",
+                    method.getName(), method.getClass().getName()), e);
+        }
     }
 
     /**
      * Returns CUBA view definition based on Entity View class.
+     *
      * @param viewInterface Entity view class.
      * @return CUBA view.
      */
@@ -215,7 +230,6 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
         return viewInterfaceInfo.getView();
     }
 
-
     /**
      * POJO containing all information about view interface.
      */
@@ -225,7 +239,7 @@ public class ViewsConfiguration implements InitializingBean, ApplicationListener
 
         protected final Class<Entity> entityClass;
 
-        protected View view; //We create views in lazy manner
+        protected View view; //We create views in lazy manner after context is initialized
 
         protected final Class<? extends BaseEntityView> replacedView;
 

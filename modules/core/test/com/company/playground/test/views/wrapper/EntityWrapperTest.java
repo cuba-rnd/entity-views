@@ -1,7 +1,7 @@
-package com.company.playground.core;
+package com.company.playground.test.views.wrapper;
 
-import com.company.playground.AppTestContainer;
 import com.company.playground.entity.SampleEntity;
+import com.company.playground.test.AppTestContainer;
 import com.company.playground.views.sample.SampleMinimalView;
 import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithUserView;
@@ -26,12 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
 
-public class WrapperTest {
+public class EntityWrapperTest {
 
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(ViewInterfacesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(EntityWrapperTest.class);
 
     private Metadata metadata;
     private Persistence persistence;

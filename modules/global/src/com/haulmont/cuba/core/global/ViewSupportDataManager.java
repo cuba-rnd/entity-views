@@ -18,4 +18,6 @@ public interface ViewSupportDataManager extends DataManager {
     <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView);
 
     <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> K commit(V entityView, Class<K> targetView);
+
+    <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> void remove(V entityView);
 }

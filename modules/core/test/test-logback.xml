@@ -38,6 +38,8 @@
 
     <logger name="com.haulmont.cuba" level="INFO"/>
 
+    <logger name="com.haulmont.cuba.core.views" level="TRACE"/>
+
     <logger name="com.haulmont.cuba.core.sys.CubaDefaultListableBeanFactory" level="WARN"/>
 
     <logger name="com.haulmont.cuba.core.sys.CubaCoreApplicationContext" level="INFO"/>
