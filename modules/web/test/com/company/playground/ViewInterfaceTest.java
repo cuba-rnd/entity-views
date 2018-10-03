@@ -2,8 +2,8 @@ package com.company.playground;
 
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.views.sample.SampleMinimalView;
-import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
+import com.company.playground.views.user.SampleMinimalWithUserView;
 import com.haulmont.cuba.client.testsupport.CubaClientTestCase;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.EntityStates;

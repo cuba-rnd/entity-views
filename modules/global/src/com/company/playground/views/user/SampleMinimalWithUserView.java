@@ -1,5 +1,6 @@
-package com.company.playground.views.sample;
+package com.company.playground.views.user;
 
+import com.company.playground.views.sample.SampleMinimalView;
 import com.haulmont.cuba.core.views.BaseEntityView;
 import com.haulmont.cuba.core.views.scan.EntityViewName;
 import com.haulmont.cuba.core.views.scan.ReplaceEntityView;

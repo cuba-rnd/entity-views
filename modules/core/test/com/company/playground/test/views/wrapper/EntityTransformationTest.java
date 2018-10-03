@@ -1,18 +1,16 @@
 package com.company.playground.test.views.wrapper;
 
+import com.company.playground.entity.ExtendedUser;
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.test.AppTestContainer;
 import com.company.playground.test.views.BaseEntityViewTest;
 import com.company.playground.views.sample.SampleMinimalView;
-import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParameters;
 import com.company.playground.views.sample.SampleWithParentView;
-import com.company.playground.views.sample.SampleWithUserView;
+import com.company.playground.views.user.SampleMinimalWithUserView;
+import com.company.playground.views.user.SampleWithUserView;
 import com.haulmont.bali.db.QueryRunner;
-import com.haulmont.cuba.core.EntityManager;
 import com.haulmont.cuba.core.Persistence;
-import com.haulmont.cuba.core.Transaction;
-import com.haulmont.cuba.core.TypedQuery;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
@@ -53,15 +51,7 @@ public class EntityTransformationTest {
         persistence = cont.persistence();
         dataManager = AppBeans.get(ViewSupportDataManager.class);
 
-        User user;
-        try (Transaction tx = persistence.createTransaction()) {
-            EntityManager em = persistence.getEntityManager();
-            TypedQuery<User> query = em.createQuery(
-                    "select u from sec$User u where u.login = :userLogin", User.class);
-            query.setParameter("userLogin", "admin");
-            user = query.getResultList().get(0);
-            tx.commit();
-        }
+        User user = dataManager.load(ExtendedUser.class).one();
 
         data1 = metadata.create(SampleEntity.class);
         data1.setName("Data1");

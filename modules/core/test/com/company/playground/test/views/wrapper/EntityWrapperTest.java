@@ -1,17 +1,14 @@
 package com.company.playground.test.views.wrapper;
 
+import com.company.playground.entity.ExtendedUser;
 import com.company.playground.entity.SampleEntity;
 import com.company.playground.test.AppTestContainer;
 import com.company.playground.views.sample.SampleMinimalView;
-import com.company.playground.views.sample.SampleMinimalWithUserView;
-import com.company.playground.views.sample.SampleWithUserView;
+import com.company.playground.views.user.SampleMinimalWithUserView;
+import com.company.playground.views.user.SampleWithUserView;
 import com.haulmont.bali.db.QueryRunner;
-import com.haulmont.cuba.core.EntityManager;
 import com.haulmont.cuba.core.Persistence;
-import com.haulmont.cuba.core.Transaction;
-import com.haulmont.cuba.core.TypedQuery;
 import com.haulmont.cuba.core.global.AppBeans;
-import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
@@ -33,7 +30,6 @@ public class EntityWrapperTest {
 
     private static final Logger log = LoggerFactory.getLogger(EntityWrapperTest.class);
 
-    private Metadata metadata;
     private Persistence persistence;
     private ViewSupportDataManager dataManager;
     private SampleEntity data1, data2;
@@ -45,25 +41,17 @@ public class EntityWrapperTest {
 
         log.info("Java Version: {}", System.getProperty("java.version", "Cannot read Java version from system properties"));
 
-        metadata = cont.metadata();
         persistence = cont.persistence();
         dataManager = AppBeans.get(ViewSupportDataManager.class);
         viewsConfig = AppBeans.get(ViewsConfiguration.class);
 
-        try (Transaction tx = persistence.createTransaction()) {
-            EntityManager em = persistence.getEntityManager();
-            TypedQuery<User> query = em.createQuery(
-                    "select u from sec$User u where u.login = :userLogin", User.class);
-            query.setParameter("userLogin", "admin");
-            user = query.getResultList().get(0);
-            tx.commit();
-        }
+        user = dataManager.load(ExtendedUser.class).one();
 
-        data1 = metadata.create(SampleEntity.class);
+        data1 = dataManager.create(SampleEntity.class);
         data1.setName("Data1");
         data1.setUser(user);
 
-        data2 = metadata.create(SampleEntity.class);
+        data2 = dataManager.create(SampleEntity.class);
         data2.setName("Data2");
         data2.setParent(data1);
         data2.setUser(user);
@@ -104,10 +92,10 @@ public class EntityWrapperTest {
     }
 
     @Test
-    public void testGetInterfaceWithSubstitution(){
+    public void testGetInterfaceWithSubstitution() {
         View view = viewsConfig.getViewByInterface(SampleMinimalView.class);
         View substitute = viewsConfig.getViewByInterface(SampleMinimalWithUserView.class);
-         assertEquals(view.getName(), substitute.getName());
+        assertEquals(view.getName(), substitute.getName());
     }
 
 

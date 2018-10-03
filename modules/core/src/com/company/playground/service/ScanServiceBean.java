@@ -1,8 +1,8 @@
 package com.company.playground.service;
 
 import com.company.playground.entity.SampleEntity;
-import com.company.playground.views.sample.SampleMinimalWithUserView;
 import com.company.playground.views.sample.SampleWithParentView;
+import com.company.playground.views.user.SampleMinimalWithUserView;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.views.factory.EntityViewWrapper;
 import com.haulmont.cuba.security.entity.User;

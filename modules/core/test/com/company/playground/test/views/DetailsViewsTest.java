@@ -74,8 +74,6 @@ public class DetailsViewsTest {
         param4.setName("Param4");
         param4.setCompEntity(data3);
 
-
-
         persistence.runInTransaction((em) -> {
             em.persist(data1);
             em.persist(param1);

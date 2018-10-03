@@ -47,10 +47,21 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
         log.trace("Scanning views in packages {}", Arrays.toString(packages));
         try {
             Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> viewInterfaceDefinitions = scanForViewInterfaces(parserContext, packages);
-            BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ViewsConfiguration.class)
-                    .addConstructorArgValue(viewInterfaceDefinitions);
-            AbstractBeanDefinition viewsConfigurationBean = builder.getBeanDefinition();
-            registry.registerBeanDefinition(ViewsConfiguration.NAME, viewsConfigurationBean);
+            if (registry.containsBeanDefinition(ViewsConfiguration.NAME)){
+                log.debug("Adding new views into existing configuration storage: {}", viewInterfaceDefinitions);
+                Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> initmap =
+                        (Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo>) registry
+                                .getBeanDefinition(ViewsConfiguration.NAME)
+                                .getConstructorArgumentValues().getArgumentValue(0, Map.class).getValue();
+
+                initmap.putAll(viewInterfaceDefinitions);
+            } else {
+                log.debug("Creating new views configuration storage: {}", viewInterfaceDefinitions);
+                BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ViewsConfiguration.class)
+                        .addConstructorArgValue(viewInterfaceDefinitions);
+                AbstractBeanDefinition viewsConfigurationBean = builder.getBeanDefinition();
+                registry.registerBeanDefinition(ViewsConfiguration.NAME, viewsConfigurationBean);
+            }
         } catch (Exception e) {
             throw new BeanInitializationException("Cannot create view interface definitions", e);
         }

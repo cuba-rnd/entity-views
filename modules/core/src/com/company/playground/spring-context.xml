@@ -7,15 +7,8 @@
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
         http://www.cuba-platform.org/schema/data/views http://www.cuba-platform.org/schema/cuba-entity-views.xsd">
 
-    <import resource="spring-context.xml"/>
-
-    <bean name="cuba_DataManager" class="com.haulmont.cuba.core.ViewsSupportDataManagerBean"/>
-
-    <bean name="cuba_EntityStates" class="com.haulmont.cuba.core.global.ViewsSupportEntityStates"/>
-
     <!-- Annotation-based beans -->
     <context:component-scan base-package="com.company.playground"/>
 
-    <views:views base-packages="com.company.playground.views.sample"/>
-
+    <views:views base-packages="com.company.playground.views.user"/>
 </beans>

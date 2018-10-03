@@ -34,7 +34,7 @@ public class ViewsSupportFluentLoader<E extends Entity<K>, V extends BaseEntityV
 
     public class ViewQuery {
 
-        private final FluentLoader<E, K>.ByQuery delegateQuery;
+        private final FluentLoader.ByQuery<E, K> delegateQuery;
 
         ViewQuery(String queryString) {
             delegateQuery = delegate.query(queryString);
@@ -47,7 +47,11 @@ public class ViewsSupportFluentLoader<E extends Entity<K>, V extends BaseEntityV
 
         public List<V> list() {
             View view = AppBeans.get(ViewsConfiguration.class).getViewByInterface(viewInterface);
-            return delegateQuery.view(view).list().stream().map((e) -> EntityViewWrapper.wrap(e, viewInterface)).collect(Collectors.toList());
+            return delegateQuery.view(view)
+                    .list()
+                    .stream()
+                    .map(e -> EntityViewWrapper.wrap(e, viewInterface))
+                    .collect(Collectors.toList());
         }
     }
 

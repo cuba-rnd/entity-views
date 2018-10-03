@@ -13,7 +13,7 @@ public interface ViewSupportDataManager extends DataManager {
 
     <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> entityView);
 
-    <V extends BaseEntityView> V create(Class<V> viewInterface);
+    <V extends BaseEntityView> V createWithView(Class<V> viewInterface);
 
     <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView);
 

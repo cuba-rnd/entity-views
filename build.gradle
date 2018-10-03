@@ -1,7 +1,8 @@
 buildscript {
-    ext.cubaVersion = '6.9.4'
+    ext.cubaVersion = '6.10.0'
     repositories {
 
+        mavenLocal()
         maven {
             url 'https://repo.cuba-platform.com/content/groups/work'
             credentials {
@@ -69,7 +70,13 @@ configure([globalModule, coreModule, webModule]) {
 }
 
 configure(globalModule) {
-    task enhance(type: CubaEnhancing)
+
+    entitiesEnhancing {
+        main {
+            enabled = true
+        }
+    }
+
 }
 
 configure(coreModule) {
@@ -107,16 +114,16 @@ configure(coreModule) {
         dbms = 'postgres'
         host = 'localhost'
         dbName = 'playground'
-        dbUser = 'cuba'
-        dbPassword = 'cuba'
+        dbUser = 'postgres'
+        dbPassword = 'pw'
     }
 
     task updateDb(dependsOn: assembleDbScripts, description: 'Updates local database', type: CubaDbUpdate) {
         dbms = 'postgres'
         host = 'localhost'
         dbName = 'playground'
-        dbUser = 'cuba'
-        dbPassword = 'cuba'
+        dbUser = 'postgres'
+        dbPassword = 'pw'
     }
 }
 

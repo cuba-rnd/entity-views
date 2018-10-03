@@ -2,7 +2,6 @@ package com.haulmont.cuba.core;
 
 import com.haulmont.cuba.core.app.DataManagerBean;
 import com.haulmont.cuba.core.entity.Entity;
-import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.global.ViewSupportDataManager;
 import com.haulmont.cuba.core.global.ViewsSupportFluentLoader;
@@ -18,9 +17,6 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
     @Inject
     private ViewsConfiguration conf;
 
-    @Inject
-    private Metadata metadata;
-
     @Override
     public <E extends Entity<K>, V extends BaseEntityView<E>, K> V reload(E entity, Class<V> viewInterface) {
         View view = conf.getViewByInterface(viewInterface);
@@ -34,9 +30,9 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
     }
 
     @Override
-    public <V extends BaseEntityView> V create(Class<V> viewInterface) {
+    public <V extends BaseEntityView> V createWithView(Class<V> viewInterface) {
         Class<? extends Entity> c = conf.getViewByInterface(viewInterface).getEntityClass();
-        return (V) EntityViewWrapper.wrap(metadata.create(c), viewInterface);
+        return (V) EntityViewWrapper.wrap(create(c), viewInterface);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.company.playground.service;
 
 
-import com.company.playground.views.sample.SampleMinimalWithUserView;
+import com.company.playground.views.user.SampleMinimalWithUserView;
 
 public interface ScanService {
     String NAME = "playground_ScanService";
