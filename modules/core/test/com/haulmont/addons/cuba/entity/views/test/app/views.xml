@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<views xmlns="http://schemas.haulmont.com/cuba/view.xsd">
+    <view class="com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity"
+          extends="_local"
+          name="sample-entity-editor-view">
+        <property name="user"
+                  view="_minimal"/>
+        <property name="parent"
+                  view="_minimal">
+            <property name="name"/>
+        </property>
+    </view>
+    <view class="com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity"
+          extends="_local"
+          name="sampleEntity-browse-view">
+        <property name="parent"
+                  view="_minimal">
+            <property name="name"/>
+        </property>
+        <property name="user"
+                  view="_minimal"/>
+    </view>
+    <view class="com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser"
+          extends="user.edit"
+          name="ext-user-view"
+          overwrite="true">
+        <property name="longName"/>
+    </view>
+    <view class="com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity"
+          extends="_local"
+          name="sampleEntity-children-view">
+        <property name="params"
+                  view="_minimal"/>
+        <property name="compParams"
+                  view="_minimal"/>
+    </view>
+</views>

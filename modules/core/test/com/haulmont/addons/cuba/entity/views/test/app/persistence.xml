@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             version="2.0">
+    <persistence-unit name="playground"
+                      transaction-type="RESOURCE_LOCAL">
+        <class>com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity</class>
+        <class>com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser</class>
+        <class>com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter</class>
+    </persistence-unit>
+</persistence>
