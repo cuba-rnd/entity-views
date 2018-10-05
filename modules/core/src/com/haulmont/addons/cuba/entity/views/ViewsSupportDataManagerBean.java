@@ -17,13 +17,13 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
     private ViewsConfiguration conf;
 
     @Override
-    public <E extends Entity<K>, V extends BaseEntityView<E>, K> V reload(E entity, Class<V> viewInterface) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, K> V reload(E entity, Class<V> viewInterface) {
         View view = conf.getViewByInterface(viewInterface);
         return EntityViewWrapper.wrap(reload(entity, view), viewInterface);
     }
 
     @Override
-    public <E extends Entity<K>, V extends BaseEntityView<E>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> viewInterface) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, K> ViewsSupportFluentLoader<E, V, K> loadWithView(Class<V> viewInterface) {
         Class<? extends Entity> entityClass = conf.getViewByInterface(viewInterface).getEntityClass();
         return new ViewsSupportFluentLoader(entityClass, this, viewInterface);
     }
@@ -35,21 +35,21 @@ public class ViewsSupportDataManagerBean extends DataManagerBean implements View
     }
 
     @Override
-    public <E extends Entity, V extends BaseEntityView<E>> V commit(V entityView) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, K> V commit(V entityView) {
         View view = conf.getViewByInterface(entityView.getInterfaceClass());
         E savedEntity = commit(entityView.getOrigin(), view);
         return EntityViewWrapper.wrap(savedEntity, entityView.getInterfaceClass());
     }
 
     @Override
-    public <E extends Entity, V extends BaseEntityView<E>, T extends BaseEntityView<E>> T commit(V entityView, Class<T> targetView) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, R extends BaseEntityView<E, K>, K> R commit(V entityView, Class<R> targetView) {
         View view = conf.getViewByInterface(targetView);
         E savedEntity = commit(entityView.getOrigin(), view);
         return EntityViewWrapper.wrap(savedEntity, targetView);
     }
 
     @Override
-    public <E extends Entity, V extends BaseEntityView<E>, K extends BaseEntityView<E>> void remove(V entityView) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, R extends BaseEntityView<E, K>, K> void remove(V entityView) {
         remove(entityView.getOrigin());
     }
 }

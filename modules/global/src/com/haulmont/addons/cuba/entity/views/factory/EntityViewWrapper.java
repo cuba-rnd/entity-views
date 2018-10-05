@@ -45,7 +45,7 @@ public class EntityViewWrapper {
      * @param <V>           Effective entity view interface class.
      * @return Proxy that implements entity view interface of class <code>V</code>
      */
-    public static <E extends Entity, V extends BaseEntityView<E>> V wrap(E entity, Class<V> viewInterface) {
+    public static <E extends Entity<K>, V extends BaseEntityView<E, K>, K> V wrap(E entity, Class<V> viewInterface) {
         if (entity == null) {
             return null;
         }
@@ -92,7 +92,7 @@ public class EntityViewWrapper {
      * @param <E> Underlying entity's class.
      * @param <V> Entity View interface class.
      */
-    static class ViewInterfaceInvocationHandler<E extends Entity, V extends BaseEntityView<E>> implements InvocationHandler, Serializable {
+    static class ViewInterfaceInvocationHandler<E extends Entity<K>, V extends BaseEntityView<E, K>, K> implements InvocationHandler, Serializable {
 
         private E entity;
         private boolean needReload;

@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * @param <E> entity type.
  * @param <V> entity view type.
  */
-public class WrappingList<E extends Entity, V extends BaseEntityView<E>> implements List<V> {
+public class WrappingList<E extends Entity<K>, V extends BaseEntityView<E, K>, K> implements List<V> {
 
     private static final Logger log = LoggerFactory.getLogger(WrappingList.class);
 
