@@ -1,0 +1,26 @@
+<xsd:schema xmlns="http://www.cuba-platform.org/schema/data/views"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://www.cuba-platform.org/schema/data/views" elementFormDefault="qualified">
+    <xsd:import namespace="http://www.springframework.org/schema/tool"/>
+    <xsd:import namespace="http://www.springframework.org/schema/context"/>
+
+    <xsd:complexType name="views">
+        <xsd:attribute name="base-packages" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+				Defines comma-separated base packages to scan to for entity view interfaces registration.
+				]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:element name="views">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="views"/>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+
+</xsd:schema>

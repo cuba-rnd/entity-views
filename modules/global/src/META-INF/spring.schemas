@@ -1,2 +1,2 @@
-http\://www.cuba-platform.org/schema/cuba-entity-views.xsd=com/haulmont/cuba/core/views/scan/cuba-entity-views.xsd
+http\://www.cuba-platform.org/schema/cuba-entity-views.xsd=com/haulmont/addons/cuba/entity/views/scan/cuba-entity-views.xsd
  

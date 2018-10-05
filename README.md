@@ -186,10 +186,10 @@ public class ViewsNamespaceHandler extends NamespaceHandlerSupport {
 ```
 
 That's it. Now Spring knows which parser will process custom tag defined in the config. When config processing starts, 
-for each tag entry, Spring invokes ```com.haulmont.cuba.core.views.scan.ViewsConfigurationParser#parse()``` method.
+for each tag entry, Spring invokes ```ViewsConfigurationParser#parse()``` method.
 
 When the method is invoked it scans packages specified in tag attribute and gathers all view interface definitions. 
-Please look at ```com.haulmont.cuba.core.views.scan.ViewsConfigurationParser#scanForViewInterfaces()``` method for details.
+Please look at ```ViewsConfigurationParser#scanForViewInterfaces()``` method for details.
 
 When all view interface definitions are gathered we create and register view interface repository as a Spring bean:
 ```java
@@ -198,11 +198,11 @@ BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(View
 AbstractBeanDefinition viewsConfigurationBean = builder.getBeanDefinition();
 registry.registerBeanDefinition(ViewsConfiguration.NAME, viewsConfigurationBean);
 ```
-The registry - ```com.haulmont.cuba.core.views.scan.ViewsConfiguration``` now can be injected into both core services or 
+The registry - ```ViewsConfiguration``` now can be injected into both core services or 
 UI controllers. In the second case you should specify custom tag in ```web``` module's ```web-spring.xml``` configuration.
 
 ```ViewsConfiguration``` stores all VEntity iew Interfaces and performs views substitution automatically after initialization 
-in ```com.haulmont.cuba.core.views.scan.ViewsConfiguration#buildViewSubstitutionChain()```. We need views substitution to 
+in ```ViewsConfiguration#buildViewSubstitutionChain()```. We need views substitution to 
 implement entity extension mechanism properly. 
 
 Entity View Interfaces are ready for use. They will be used to build CUBA views, so this concept do not break existing 
@@ -231,15 +231,15 @@ Its implementation ```ViewsSupportDataManagerBean``` extends CUBA's ```DataManag
 manipulation methods internally. Also there is a custom ```FluentLoader``` implementation named ```ViewsSupportFluentLoader``` 
 that adds an Entity Views support.
 
-Internally, these classes use ```com.haulmont.cuba.core.views.scan.ViewsConfiguration``` to get CUBA 
+Internally, these classes use ```ViewsConfiguration``` to get CUBA 
 views by Entity View Interface definition. We generate CUBA views when the application context is initialized, that's why 
 the ```ViewsConfiguration``` class implements ```ApplicationListener```. CUBA views creation is implemented in a recursive manner and we 
 perform checks for cyclic references. If there is a cyclic reference in the Entity Views hierarchy, the application fails 
 on a Spring context initialization phase.
 
-Class that performes Entity to Entity View instance conversion is ```com.haulmont.cuba.core.views.factory.EntityViewWrapper```. You need to use
+Class that performes Entity to Entity View instance conversion is ```EntityViewWrapper```. You need to use
 its ```wrap()``` method to wrap Entity into view. The method creates proxy for an Entity View Interface. The proxy processes all 
-Entity View's method invocations using ```com.haulmont.cuba.core.views.factory.EntityViewWrapper.ViewInterfaceInvocationHandler``` class. The handler 
+Entity View's method invocations using ```EntityViewWrapper.ViewInterfaceInvocationHandler``` class. The handler 
 tries to find a proper method in the following order:
 1. Methods defined in ```BaseEntityView``` interface.
 2. Methods defined in the entity that is wrapped into the view.

@@ -34,7 +34,7 @@
 
     <!-- Begin CUBA -->
 
-    <logger name="com.company.playground" level="TRACE"/>
+    <logger name="com.haulmont.addons.cuba.entity.views" level="TRACE"/>
 
     <logger name="com.haulmont.cuba" level="INFO"/>
 
