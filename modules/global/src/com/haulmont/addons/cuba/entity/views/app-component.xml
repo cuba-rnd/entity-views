@@ -13,6 +13,7 @@
             name="core">
         <artifact appJar="true"
                   name="entity-views-core"/>
-        <property name="description" value="Core Classes for Entity Views"/>
+        <property name="cuba.springContextConfig"
+                  value="+com/haulmont/addons/cuba/entity/views/spring.xml"/>
     </module>
 </app-component>

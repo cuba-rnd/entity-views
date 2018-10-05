@@ -30,7 +30,7 @@ apply(plugin: 'cuba')
 
 cuba {
     artifact {
-        group = 'com.haulmont.addons.cuba.entity.view'
+        group = 'com.haulmont.addons.cuba.entity.views'
         version = '0.1'
         isSnapshot = true
     }
