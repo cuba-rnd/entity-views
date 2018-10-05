@@ -13,7 +13,7 @@ import java.io.Serializable;
  *
  */
 @AbstractEntityView
-public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
+public interface BaseEntityView<T extends Entity<K>, K> extends Entity<K>, Serializable {
 
     /**
      * Returns underlying entity a.k.a. "unwraps" it. Please note that unwrapped entity will be partially
@@ -28,7 +28,7 @@ public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
      * @param <V> Entity View Interface class.
      * @return Effective view interface class.
      */
-    <V extends BaseEntityView<T>> Class<V> getInterfaceClass();
+    <V extends BaseEntityView<T, K>> Class<V> getInterfaceClass();
 
     /**
      * Applies new view interface to an underlying entity. Current implementation may relod entity and
@@ -37,6 +37,6 @@ public interface BaseEntityView<T extends Entity> extends Entity, Serializable {
      * @param <V> target view instance class.
      * @return target view instance with the same underlying entity.
      */
-    <V extends BaseEntityView<T>> V reload(Class<V> targetView);
+    <V extends BaseEntityView<T, K>> V reload(Class<V> targetView);
 
 }

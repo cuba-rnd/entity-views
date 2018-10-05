@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,7 +59,7 @@ public class WrappingListTest {
     @Test
     public void testToArray(){
         List<SampleEntity> testList = testData.subList(0, 2);
-        WrappingList<SampleEntity, SampleMinimalView> wrappingList = new WrappingList<>(testList, SampleMinimalView.class);
+        WrappingList<SampleEntity, SampleMinimalView, UUID> wrappingList = new WrappingList<>(testList, SampleMinimalView.class);
 
         assertEquals("Data0", wrappingList.get(0).getName());
         assertEquals("Data1", wrappingList.get(1).getName());
@@ -85,7 +86,7 @@ public class WrappingListTest {
 
     @Test
     public void testIterator(){
-        WrappingList<SampleEntity, SampleMinimalView> wrappingList = new WrappingList<>(testData, SampleMinimalView.class);
+        WrappingList<SampleEntity, SampleMinimalView, UUID> wrappingList = new WrappingList<>(testData, SampleMinimalView.class);
         ListIterator<SampleMinimalView> iterator = wrappingList.listIterator();
 
         assertEquals("Data0", iterator.next().getName());
@@ -107,9 +108,9 @@ public class WrappingListTest {
 
     @Test
     public void testRetainAll(){
-        WrappingList<SampleEntity, SampleMinimalView> data1 = new WrappingList<>((new ArrayList<>(testData)).subList(0, 6), SampleMinimalView.class);
+        WrappingList<SampleEntity, SampleMinimalView, UUID> data1 = new WrappingList<>((new ArrayList<>(testData)).subList(0, 6), SampleMinimalView.class);
         data1.sort(Comparator.comparing(SampleMinimalView::getName));//To fill wrapper cache
-        WrappingList<SampleEntity, SampleMinimalView> data2 = new WrappingList<>((new ArrayList<>(testData)).subList(4, 10), SampleMinimalView.class);
+        WrappingList<SampleEntity, SampleMinimalView, UUID> data2 = new WrappingList<>((new ArrayList<>(testData)).subList(4, 10), SampleMinimalView.class);
         if (data1.retainAll(data2)){
             assertEquals(2, data1.size());
             assertEquals("Data4", data1.get(0).getName());
@@ -122,9 +123,9 @@ public class WrappingListTest {
 
     @Test
     public void testRemoveAll(){
-        WrappingList<SampleEntity, SampleMinimalView> data1 = new WrappingList<>((new ArrayList<>(testData)).subList(0, 6), SampleMinimalView.class);
+        WrappingList<SampleEntity, SampleMinimalView, UUID> data1 = new WrappingList<>((new ArrayList<>(testData)).subList(0, 6), SampleMinimalView.class);
         data1.sort(Comparator.comparing(SampleMinimalView::getName));//To fill wrapper cache
-        WrappingList<SampleEntity, SampleMinimalView> data2 = new WrappingList<>((new ArrayList<>(testData)).subList(4, 10), SampleMinimalView.class);
+        WrappingList<SampleEntity, SampleMinimalView, UUID> data2 = new WrappingList<>((new ArrayList<>(testData)).subList(4, 10), SampleMinimalView.class);
         if (data1.removeAll(data2)){
             assertEquals(4, data1.size());
             assertEquals("Data0", data1.get(0).getName());

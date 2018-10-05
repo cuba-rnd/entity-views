@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * This is a PoC for the Entity Views support in FluentLoader.
  * @see FluentLoader
  */
-public class ViewsSupportFluentLoader<E extends Entity<K>, V extends BaseEntityView<E>, K> {
+public class ViewsSupportFluentLoader<E extends Entity<K>, V extends BaseEntityView<E, K>, K> {
 
     private final Class<V> viewInterface;
 

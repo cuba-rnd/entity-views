@@ -5,7 +5,9 @@ import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalView;
 import com.haulmont.cuba.security.entity.User;
 
-public interface SampleWithUserView extends BaseEntityView<SampleEntity> {
+import java.util.UUID;
+
+public interface SampleWithUserView extends BaseEntityView<SampleEntity, UUID> {
 
     String getName();
 
@@ -13,7 +15,7 @@ public interface SampleWithUserView extends BaseEntityView<SampleEntity> {
 
     UserMinimalView getUser();
 
-    interface UserMinimalView extends BaseEntityView<User>{
+    interface UserMinimalView extends BaseEntityView<User, UUID>{
 
         String getName();
 

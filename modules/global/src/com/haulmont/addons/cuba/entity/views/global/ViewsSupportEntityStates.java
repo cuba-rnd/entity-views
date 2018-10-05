@@ -13,21 +13,21 @@ public class ViewsSupportEntityStates  extends EntityStates {
     /**
      * @see EntityStates#isNew(Object)
      */
-    public <E extends Entity, V extends BaseEntityView<E>> boolean isNew(V entityView) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, K> boolean isNew(V entityView) {
         return isNew(entityView.getOrigin());
     }
 
     /**
      * @see EntityStates#isDetached(Object)
      */
-    public <E extends Entity, V extends BaseEntityView<E>> boolean isDetached(V entityView) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, K> boolean isDetached(V entityView) {
         return isDetached(entityView.getOrigin());
     }
 
     /**
      * @see EntityStates#isManaged(Object)
      */
-    public <E extends Entity, V extends BaseEntityView<E>> boolean isManaged(V entityView) {
+    public <E extends Entity<K>, V extends BaseEntityView<E, K>, K> boolean isManaged(V entityView) {
         return isManaged(entityView.getOrigin());
     }
 
