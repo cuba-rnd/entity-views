@@ -25,22 +25,22 @@ public class EntityParameter extends StandardEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SAMPLE_ENTITY_ID")
-    protected com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity sampleEntity;
+    protected SampleEntity sampleEntity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COMP_ENTITY_ID")
-    protected com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity compEntity;
+    protected SampleEntity compEntity;
 
-    public void setCompEntity(com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity compEntity) {
+    public void setCompEntity(SampleEntity compEntity) {
         this.compEntity = compEntity;
     }
 
-    public com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity getCompEntity() {
+    public SampleEntity getCompEntity() {
         return compEntity;
     }
 
 
-    public void setSampleEntity(com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity sampleEntity) {
+    public void setSampleEntity(SampleEntity sampleEntity) {
         this.sampleEntity = sampleEntity;
     }
 

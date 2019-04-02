@@ -36,23 +36,23 @@ public class SampleEntity extends StandardEntity {
     protected User user;
 
     @OneToMany(mappedBy = "sampleEntity")
-    protected List<com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter> params;
+    protected List<EntityParameter> params;
 
     @Composition
     @OnDelete(DeletePolicy.CASCADE)
     @OneToMany(mappedBy = "compEntity")
-    protected List<com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter> compParams;
+    protected List<EntityParameter> compParams;
 
-    public void setCompParams(List<com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter> compParams) {
+    public void setCompParams(List<EntityParameter> compParams) {
         this.compParams = compParams;
     }
 
-    public List<com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter> getCompParams() {
+    public List<EntityParameter> getCompParams() {
         return compParams;
     }
 
 
-    public void setParams(List<com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter> params) {
+    public void setParams(List<EntityParameter> params) {
         this.params = params;
     }
 
