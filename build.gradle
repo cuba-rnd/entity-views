@@ -1,5 +1,5 @@
 buildscript {
-    ext.cubaVersion = '6.10.0'
+    ext.cubaVersion = '7.0.3'
     repositories {
 
         mavenLocal()
@@ -89,7 +89,7 @@ configure(coreModule) {
 
     dependencies {
         compile(globalModule)
-        provided(servletApi)
+        compileOnly(servletApi)
         jdbc(hsql)
         testRuntime(hsql)
 
