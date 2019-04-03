@@ -3,7 +3,7 @@ package com.haulmont.addons.cuba.entity.views.scan;
 import com.haulmont.addons.cuba.entity.views.BaseEntityView;
 import com.haulmont.addons.cuba.entity.views.scan.exception.ViewInitializationException;
 import com.haulmont.cuba.core.entity.Entity;
-import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanInitializationException;
@@ -102,7 +102,7 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
     private Class<? extends BaseEntityView> extractViewInterface(BeanDefinition beanDefinition) throws ViewInitializationException {
         Class<? extends BaseEntityView> viewInterface;
         try {
-            viewInterface = ClassUtils.getClass(beanDefinition.getBeanClassName());
+            viewInterface = (Class<? extends BaseEntityView>)ClassUtils.getClass(beanDefinition.getBeanClassName());
         } catch (ClassNotFoundException e) {
             throw new ViewInitializationException(String.format("Interface was not found for %s", beanDefinition.getBeanClassName()), e);
         }
@@ -112,7 +112,7 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
 
     private Class<Entity> extractEntityClass(Class<? extends BaseEntityView> viewInterface) throws ViewInitializationException {
         //noinspection unchecked
-        List<Class> implementedInterfaces = ClassUtils.getAllInterfaces(viewInterface);
+        List<Class<?>> implementedInterfaces = ClassUtils.getAllInterfaces(viewInterface);
         implementedInterfaces.add(viewInterface);
 
         for (Class intf : implementedInterfaces) {
@@ -127,7 +127,7 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
                 Type entityType = Arrays.asList(baseEntityViewIntf.getActualTypeArguments()).get(0);
                 try {
                     //noinspection unchecked - as parameter type must implement Entity by declaraion
-                    return ClassUtils.getClass(entityType.getTypeName());
+                    return (Class<Entity>)ClassUtils.getClass(entityType.getTypeName());
                 } catch (ClassNotFoundException e) {
                     throw new ViewInitializationException(String.format("Class was not found for %s", entityType.getTypeName()), e);
                 }

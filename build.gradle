@@ -1,17 +1,14 @@
 buildscript {
-    ext.cubaVersion = '6.10.8'
+    ext.cubaVersion = '7.0.3'
     repositories {
 
         mavenLocal()
+        mavenCentral()
+        jcenter()
         maven {
-            url 'https://repo.cuba-platform.com/content/groups/work'
-            credentials {
-                username(rootProject.hasProperty('repoUser') ? rootProject['repoUser'] : 'cuba')
-                password(rootProject.hasProperty('repoPass') ? rootProject['repoPass'] : 'cuba123')
-            }
+            url 'https://dl.bintray.com/cuba-platform/main'
         }
-
-    }
+}
     dependencies {
         classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
     }
@@ -89,7 +86,7 @@ configure(coreModule) {
 
     dependencies {
         compile(globalModule)
-        provided(servletApi)
+        compileOnly(servletApi)
         jdbc(hsql)
         testRuntime(hsql)
 
@@ -164,5 +161,5 @@ task restart(dependsOn: ['stop', ":${modulePrefix}-core:deploy"], description: '
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.10.3'
+    gradleVersion = '4.10.3' 
 }
