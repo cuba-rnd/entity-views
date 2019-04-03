@@ -8,4 +8,4 @@ deploy/*
 modules/*/build/*
 out
 test-run
-.idea
+.idea/*
