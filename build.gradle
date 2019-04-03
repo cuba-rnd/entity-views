@@ -145,7 +145,6 @@ configure(coreModule) {
     }
 }
 
-
 task undeploy(type: Delete) {
     delete("$cuba.tomcat.dir/shared")
     delete("$cuba.tomcat.dir/webapps/${modulePrefix}-core")
