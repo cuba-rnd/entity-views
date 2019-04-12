@@ -262,6 +262,6 @@ SampleWithParentView sampleWithParent = sampleMinimalView.transform(SampleWithPa
 //...
 ``` 
 ## Conclusion
-Entity View Interfaces is a new feature of the platfor which is backward-compatible with existing programming model, but adds strong
+Entity View Interfaces is a new feature of the platform which is backward-compatible with existing programming model, but adds strong
 typing to entity manipulation processes and prevents developers from accessing unfetched attributes.
 
