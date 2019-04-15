@@ -7,40 +7,35 @@ buildscript {
         maven {
             url 'https://dl.bintray.com/cuba-platform/main'
         }
-}
+    }
     dependencies {
         classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
     }
 }
 
 def modulePrefix = 'entity-views'
-def globalModule = project(":${modulePrefix}-global")
-def coreModule = project(":${modulePrefix}-core")
+def artifactGlobalName = modulePrefix + "-global"
+def artifactCoreName = modulePrefix + "-core"
+def globalModule = project(artifactGlobalName)
+def coreModule = project(artifactCoreName)
 
+def artifactGroup = 'com.haulmont.addons.cuba.entity.views'
+def artifactVersion = '0.1.1'
+def isArtifactSnapshot = false
 
-def servletApi = 'javax.servlet:javax.servlet-api:3.1.0'
-
-
-apply(plugin: 'idea')
 apply(plugin: 'cuba')
+apply(plugin: 'maven-publish')
 
 cuba {
     artifact {
-        group = 'com.haulmont.addons.cuba.entity.views'
-        version = '0.1'
-        isSnapshot = true
-    }
-    tomcat {
-        dir = "$project.rootDir/deploy/tomcat"
-    }
-    ide {
-        vcs = 'Git'
+        group = artifactGroup
+        version = artifactVersion
+        isSnapshot = isArtifactSnapshot
     }
 }
 
 dependencies {
     appComponent("com.haulmont.cuba:cuba-global:$cubaVersion")
-
 }
 
 def hsql = 'org.hsqldb:hsqldb:2.4.1'
@@ -48,7 +43,6 @@ def hsql = 'org.hsqldb:hsqldb:2.4.1'
 configure([globalModule, coreModule]) {
     apply(plugin: 'java')
     apply(plugin: 'maven')
-    apply(plugin: 'idea')
     apply(plugin: 'cuba')
 
     dependencies {
@@ -60,8 +54,16 @@ configure([globalModule, coreModule]) {
         classifier = 'sources'
     }
 
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    javadocJar.dependsOn javadoc
+
     artifacts {
         archives sourceJar
+        archives javadocJar
     }
 }
 
@@ -74,21 +76,26 @@ configure(globalModule) {
         }
     }
 
+    publishing {
+        publications {
+            publishGlobal(MavenPublication) {
+                groupId = artifactGroup
+                artifactId = artifactGlobalName
+                version = artifactVersion
+                from components.java
+                artifact sourceJar
+                artifact javadocJar
+            }
+        }
+    }
+
 }
 
 configure(coreModule) {
 
-    configurations {
-        jdbc
-        dbscripts
-    }
-
     dependencies {
         compile(globalModule)
-        compileOnly(servletApi)
-        jdbc(hsql)
         testRuntime(hsql)
-
     }
 
     entitiesEnhancing {
@@ -96,69 +103,17 @@ configure(coreModule) {
             enabled = true
         }
     }
-
-
-    task cleanConf(description: 'Cleans up conf directory') {
-        doLast {
-            def dir = new File(cuba.tomcat.dir, "/conf/${modulePrefix}-core")
-            if (dir.isDirectory()) {
-                ant.delete(includeemptydirs: true) {
-                    fileset(dir: dir, includes: '**/*', excludes: 'local.app.properties')
-                }
+    publishing {
+        publications {
+            publishCore(MavenPublication) {
+                groupId = artifactGroup
+                artifactId = artifactCoreName
+                version = artifactVersion
+                from components.java
+                artifact sourceJar
+                artifact javadocJar
             }
         }
     }
 
-    task deploy(dependsOn: [assemble, cleanConf], type: CubaDeployment) {
-        appName = "${modulePrefix}-core"
-        appJars(modulePrefix + '-global', modulePrefix + '-core')
-    }
-
-    task startDb(type: CubaHsqlStart) {
-        dbName = 'entityviews'
-    }
-
-
-    task stopDb(type: CubaHsqlStop) {
-        dbName = 'entityviews'
-    }
-
-
-    task createDb(dependsOn: assembleDbScripts, description: 'Creates local database', type: CubaDbCreation) {
-        dbms = 'hsql'
-        host = 'localhost'
-        dbName = 'entityviews'
-        dbUser = 'sa'
-        dbPassword = ''
-    }
-
-    task updateDb(dependsOn: assembleDbScripts, description: 'Updates local database', type: CubaDbUpdate) {
-        dbms = 'hsql'
-        host = 'localhost'
-        dbName = 'entityviews'
-        dbUser = 'sa'
-        dbPassword = ''
-    }
-}
-
-
-task undeploy(type: Delete) {
-    delete("$cuba.tomcat.dir/shared")
-    delete("$cuba.tomcat.dir/webapps/${modulePrefix}-core")
-    delete("$cuba.tomcat.dir/webapps/${modulePrefix}")
-}
-
-task restart(dependsOn: ['stop', ":${modulePrefix}-core:deploy"], description: 'Redeploys applications and restarts local Tomcat') {
-    doLast {
-        ant.waitfor(maxwait: 6, maxwaitunit: 'second', checkevery: 2, checkeveryunit: 'second') {
-            not {
-                socket(server: 'localhost', port: '8787')
-            }
-        }
-        start.execute()
-    }
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.10.3' 
 }

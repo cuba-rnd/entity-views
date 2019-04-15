@@ -12,6 +12,7 @@ import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.Metadata;
+import com.haulmont.cuba.core.global.MetadataTools;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.security.entity.User;
 import mockit.Mocked;
@@ -37,7 +38,7 @@ public class BaseEntityViewTest {
 
     private static final Logger log = LoggerFactory.getLogger(BaseEntityViewTest.class);
 
-    private Metadata metadata;
+    private MetadataTools metadataTools;
     private Persistence persistence;
 
     @Mocked
@@ -54,8 +55,9 @@ public class BaseEntityViewTest {
         log.info("Java Version: {}", System.getProperty("java.version", "Cannot read Java version from system properties"));
 
         cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
-        metadata = cont.metadata();
+        Metadata metadata = cont.metadata();
         persistence = cont.persistence();
+        metadataTools = AppBeans.get(MetadataTools.class);
         dataManager = AppBeans.get(ViewSupportDataManager.class);
         entityStates = AppBeans.get(ViewsSupportEntityStates.class);
 
@@ -132,13 +134,11 @@ public class BaseEntityViewTest {
                 .get(0);
 
         assertEquals(data2.getId(), sampleMinimalView.getId());
-        assertEquals(data2.getInstanceName(), sampleMinimalView.getInstanceName());
+        assertEquals(metadataTools.getInstanceName(data2), metadataTools.getInstanceName(sampleMinimalView));
         assertSame(data2.getMetaClass(), sampleMinimalView.getMetaClass());
         assertEquals(data2.getName(), sampleMinimalView.getValue("name"));
 
-        sampleMinimalView.addPropertyChangeListener((e) -> {
-            assertEquals(sampleMinimalView.getValue(e.getProperty()), e.getValue());
-        });
+        sampleMinimalView.addPropertyChangeListener((e) -> assertEquals(sampleMinimalView.getValue(e.getProperty()), e.getValue()));
         String newName = String.format("Name%d", System.currentTimeMillis());
         sampleMinimalView.setValue("name", newName);
         assertNotEquals(data2.getName(), sampleMinimalView.getValue("name"));

@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * It is a custom tag config parser and an entity view registrar. It is called by Spring on every <code><views/><code/>
+ * It is a custom tag config parser and an entity view registrar. It is called by Spring on every {@code <views/>}
  * tag entry found in spring.xml. This class reads package names from the tag, runs a scanner to find entity views and
  * then creates {@link ViewsConfiguration} bean with all entity view interface definitions and puts it to Spring context.
  * @see BeanDefinitionParser

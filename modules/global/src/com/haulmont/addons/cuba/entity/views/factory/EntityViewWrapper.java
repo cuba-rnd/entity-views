@@ -43,6 +43,7 @@ public class EntityViewWrapper {
      * @param viewInterface Entity View Interface class.
      * @param <E>           Entity Class
      * @param <V>           Effective entity view interface class.
+     * @param <K>           Entity ID key class.
      * @return Proxy that implements entity view interface of class <code>V</code>
      */
     public static <E extends Entity<K>, V extends BaseEntityView<E, K>, K> V wrap(E entity, Class<V> viewInterface) {

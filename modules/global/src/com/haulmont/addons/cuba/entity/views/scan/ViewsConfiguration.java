@@ -32,8 +32,7 @@ import java.util.stream.Collectors;
 
 /**
  * Registry that builds and stores entity views and corresponding CUBA views. This class also builds proper substitution
- * for entity views for extended entities and prevents cyclic references between entity views.
- * <br/>
+ * for entity views for extended entities and prevents cyclic references between entity views. <br>
  * The class is in application context despite on fact that it is not marked as a Spring component.
  */
 public class ViewsConfiguration implements InitializingBean, ApplicationListener<AppContextStartedEvent> {
