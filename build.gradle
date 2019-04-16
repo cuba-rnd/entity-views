@@ -3,13 +3,17 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
         maven {
             url 'https://dl.bintray.com/cuba-platform/main'
         }
+        jcenter()
     }
     dependencies {
         classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1+'
     }
 }
 
@@ -24,7 +28,6 @@ def artifactVersion = '0.1.1'
 def isArtifactSnapshot = false
 
 apply(plugin: 'cuba')
-apply(plugin: 'maven-publish')
 
 cuba {
     artifact {
@@ -41,9 +44,12 @@ dependencies {
 def hsql = 'org.hsqldb:hsqldb:2.4.1'
 
 configure([globalModule, coreModule]) {
+
     apply(plugin: 'java')
     apply(plugin: 'maven')
+    apply(plugin: 'maven-publish')
     apply(plugin: 'cuba')
+    apply(plugin: 'com.jfrog.bintray')
 
     dependencies {
         testCompile('junit:junit:4.12')
@@ -89,6 +95,10 @@ configure(globalModule) {
         }
     }
 
+
+    bintray {
+        publications = ['publishGlobal']
+    }
 }
 
 configure(coreModule) {
@@ -116,4 +126,32 @@ configure(coreModule) {
         }
     }
 
+    bintray {
+        publications = ['publishCore']
+    }
+}
+
+subprojects {
+    bintray {
+        user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+        key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+
+        // make files public ?
+        publish = true
+        // override existing artifacts?
+        override = true
+
+        // metadata
+        pkg {
+            repo = 'labs'           // your repository name
+            name = 'cuba-entity-views'  // package name - it will be created upon upload
+            userOrg = 'cuba-platform'
+            licenses = ["Apache-2.0"]
+            websiteUrl = 'https://github.com/cuba-rnd/entity-views'
+            issueTrackerUrl = 'https://github.com/cuba-rnd/entity-views/issues'
+            vcsUrl = 'https://github.com/cuba-rnd/entity-views.git' // Mandatory for Open Source projects
+            labels = ['cuba-platform', 'opensource']
+            publicDownloadNumbers = true
+        }
+    }
 }
