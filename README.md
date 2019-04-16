@@ -62,6 +62,8 @@ In this code we have two potential issues:
 
 So how we can add type safety into this code? With entity views it's becoming easier. We've developes a special addon that will help you with it. 
 
+## Usage
+
 For a starter, specify a repository and add the addon artifact as a dependency to your project build file
 ```
 repositories {
