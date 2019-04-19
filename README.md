@@ -64,7 +64,7 @@ So how we can add type safety into this code? With entity views it's becoming ea
 
 ## Usage
 
-For a starter, specify a repository and add the addon artifact as a dependency to your project build file
+For a starter, specify a repository as the last entry in your repositories list in the ```build.gradle``` file: 
 ```
 repositories {
     ...
@@ -72,10 +72,13 @@ repositories {
         url "https://cuba-platform.bintray.com/labs"
     }
 }
+```
+Add the component to the dependencies list (or specify it in project settings using GUI):
+```
 ...
 dependencies {
     ...
-	compile 'com.haulmont.scripting:spring-script-repositories:0.1.1'
+    appComponent("com.haulmont.addons.cuba.entity.views:entity-views-core:0.1.1")
 }
 ```
  
