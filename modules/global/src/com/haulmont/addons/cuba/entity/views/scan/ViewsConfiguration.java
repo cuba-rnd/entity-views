@@ -37,14 +37,14 @@ import java.util.stream.Collectors;
  */
 public class ViewsConfiguration implements InitializingBean, ApplicationListener<AppContextStartedEvent> {
 
-    public static final String NAME = "cuba_core_ViewsConfiguration";
+    public static final String NAME = "entity_views_core_ViewsConfiguration";
 
     private static final Logger log = LoggerFactory.getLogger(ViewsConfiguration.class);
 
-    private final Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions;
+    private final Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions = new ConcurrentHashMap<>();
 
     public ViewsConfiguration(Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions) {
-        this.viewInterfaceDefinitions = new ConcurrentHashMap<>(viewInterfaceDefinitions);
+        this.viewInterfaceDefinitions.putAll(viewInterfaceDefinitions);
     }
 
     @Override

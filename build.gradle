@@ -24,7 +24,7 @@ def globalModule = project(artifactGlobalName)
 def coreModule = project(artifactCoreName)
 
 def artifactGroup = 'com.haulmont.addons.cuba.entity.views'
-def artifactVersion = '0.1.1'
+def artifactVersion = '0.1.2'
 def isArtifactSnapshot = false
 
 apply(plugin: 'cuba')
@@ -40,8 +40,6 @@ cuba {
 dependencies {
     appComponent("com.haulmont.cuba:cuba-global:$cubaVersion")
 }
-
-def hsql = 'org.hsqldb:hsqldb:2.4.1'
 
 configure([globalModule, coreModule]) {
 
@@ -103,9 +101,19 @@ configure(globalModule) {
 
 configure(coreModule) {
 
+    def hsql = 'org.hsqldb:hsqldb:2.4.1'
+
+    configurations {
+        jdbc
+        dbscripts
+    }
+
+
     dependencies {
         compile(globalModule)
+        jdbc(hsql)
         testRuntime(hsql)
+        testCompile('junit:junit:4.12')
     }
 
     entitiesEnhancing {
@@ -129,6 +137,38 @@ configure(coreModule) {
     bintray {
         publications = ['publishCore']
     }
+
+
+    entitiesEnhancing {
+        test {
+            enabled = true
+        }
+    }
+
+    task startDb(type: CubaHsqlStart) {
+        dbName = 'entityviews'
+    }
+
+    task stopDb(type: CubaHsqlStop) {
+        dbName = 'entityviews'
+    }
+
+    task createDb(dependsOn: assembleDbScripts, description: 'Creates local database', type: CubaDbCreation) {
+        dbms = 'hsql'
+        host = 'localhost'
+        dbName = 'entityviews'
+        dbUser = 'sa'
+        dbPassword = ''
+    }
+
+    task updateDb(dependsOn: assembleDbScripts, description: 'Updates local database', type: CubaDbUpdate) {
+        dbms = 'hsql'
+        host = 'localhost'
+        dbName = 'entityviews'
+        dbUser = 'sa'
+        dbPassword = ''
+    }
+
 }
 
 subprojects {

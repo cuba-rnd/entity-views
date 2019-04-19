@@ -21,6 +21,4 @@ public interface SampleWithUserView extends BaseEntityView<SampleEntity, UUID> {
 
         String getLogin();
     }
-
-
 }
