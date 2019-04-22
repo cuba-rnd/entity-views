@@ -46,21 +46,21 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
 
         log.trace("Scanning views in packages {}", Arrays.toString(packages));
         try {
-            Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> viewInterfaceDefinitions = scanForViewInterfaces(parserContext, packages);
-            if (registry.containsBeanDefinition(ViewsConfiguration.NAME)){
+            Map<Class<? extends BaseEntityView>, ViewsConfigurationBean.ViewInterfaceInfo> viewInterfaceDefinitions = scanForViewInterfaces(parserContext, packages);
+            if (registry.containsBeanDefinition(ViewsConfigurationBean.NAME)){
                 log.debug("Adding new views into existing configuration storage: {}", viewInterfaceDefinitions);
-                Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> initmap =
-                        (Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo>) registry
-                                .getBeanDefinition(ViewsConfiguration.NAME)
+                Map<Class<? extends BaseEntityView>, ViewsConfigurationBean.ViewInterfaceInfo> initmap =
+                        (Map<Class<? extends BaseEntityView>, ViewsConfigurationBean.ViewInterfaceInfo>) registry
+                                .getBeanDefinition(ViewsConfigurationBean.NAME)
                                 .getConstructorArgumentValues().getArgumentValue(0, Map.class).getValue();
 
                 initmap.putAll(viewInterfaceDefinitions);
             } else {
                 log.debug("Creating new views configuration storage: {}", viewInterfaceDefinitions);
-                BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ViewsConfiguration.class)
+                BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ViewsConfigurationBean.class)
                         .addConstructorArgValue(viewInterfaceDefinitions);
                 AbstractBeanDefinition viewsConfigurationBean = builder.getBeanDefinition();
-                registry.registerBeanDefinition(ViewsConfiguration.NAME, viewsConfigurationBean);
+                registry.registerBeanDefinition(ViewsConfigurationBean.NAME, viewsConfigurationBean);
             }
         } catch (Exception e) {
             throw new BeanInitializationException("Cannot create view interface definitions", e);
@@ -75,10 +75,10 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
      * @param packages List of packages to scan.
      * @return Map containing entity view classes and DTOs with description for building CUBA views, replacement chains, etc.
      */
-    protected Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> scanForViewInterfaces(ParserContext parserContext, String[] packages) {
+    protected Map<Class<? extends BaseEntityView>, ViewsConfigurationBean.ViewInterfaceInfo> scanForViewInterfaces(ParserContext parserContext, String[] packages) {
         XmlReaderContext readerContext = parserContext.getReaderContext();
         ViewCandidateProvider provider = new ViewCandidateProvider(readerContext.getResourceLoader());
-        Map<Class<? extends BaseEntityView>, ViewsConfiguration.ViewInterfaceInfo> viewInterfaceDefinitions = new HashMap<>();
+        Map<Class<? extends BaseEntityView>, ViewsConfigurationBean.ViewInterfaceInfo> viewInterfaceDefinitions = new HashMap<>();
         for (String scanPackage : packages) {
             log.trace("Scanning package {}", scanPackage);
             Set<BeanDefinition> viewInterfaceDefinitionsCandidates = provider.findCandidateComponents(scanPackage);
@@ -90,7 +90,7 @@ public class ViewsConfigurationParser implements BeanDefinitionParser {
                 ReplaceEntityView replaceViewAnnotation = viewInterface.getAnnotation(ReplaceEntityView.class);
                 Class<? extends BaseEntityView> replacedView = replaceViewAnnotation != null ? replaceViewAnnotation.value() : null;
 
-                viewInterfaceDefinitions.put(viewInterface, new ViewsConfiguration.ViewInterfaceInfo(viewInterface, entityClass, replacedView));
+                viewInterfaceDefinitions.put(viewInterface, new ViewsConfigurationBean.ViewInterfaceInfo(viewInterface, entityClass, replacedView));
 
                 log.info("View interface {} detected", candidate.getBeanClassName());
             }
