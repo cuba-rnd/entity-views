@@ -9,6 +9,8 @@
 
     <import resource="spring-context.xml"/>
 
+    <bean name="cuba_MetadataLoader" class="com.haulmont.addons.cuba.entity.views.ViewsSupportMetadataLoader" scope="prototype"/>
+
     <bean name="cuba_DataManager" class="com.haulmont.addons.cuba.entity.views.ViewsSupportDataManagerBean"/>
 
     <bean name="cuba_EntityStates" class="com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates"/>

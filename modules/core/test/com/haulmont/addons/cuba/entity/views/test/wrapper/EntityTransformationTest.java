@@ -1,6 +1,5 @@
 package com.haulmont.addons.cuba.entity.views.test.wrapper;
 
-import com.haulmont.addons.cuba.entity.views.global.ViewSupportDataManager;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalView;
@@ -11,6 +10,7 @@ import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleWithUserV
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.security.entity.User;
@@ -37,7 +37,7 @@ public class EntityTransformationTest {
 
     private Metadata metadata;
     private Persistence persistence;
-    private ViewSupportDataManager dataManager;
+    private DataManager dataManager;
     private SampleEntity data1, data2;
 
     @Before
@@ -48,7 +48,7 @@ public class EntityTransformationTest {
         cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
         metadata = cont.metadata();
         persistence = cont.persistence();
-        dataManager = AppBeans.get(ViewSupportDataManager.class);
+        dataManager = AppBeans.get(DataManager.class);
 
         User user = dataManager.load(ExtendedUser.class).one();
 
@@ -75,7 +75,7 @@ public class EntityTransformationTest {
 
     @Test
     public void testDoubleLazyTransform() {
-        SampleMinimalView sampleMinimalView = dataManager.loadWithView(SampleMinimalView.class)
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -102,7 +102,7 @@ public class EntityTransformationTest {
     public void testTransformToParentView() {
         //SampleMinimalWithUserView is a child of SampleMinimalView
 
-        SampleMinimalWithUserView sampleMinimalWithUser = dataManager.loadWithView(SampleMinimalWithUserView.class)
+        SampleMinimalWithUserView sampleMinimalWithUser = dataManager.load(SampleMinimalWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -119,7 +119,7 @@ public class EntityTransformationTest {
     @Test
     public void testTransformToViewWithSameAttributes() {
         //SampleMinimalWithUserView contains subset of SampleWithUserView attributes
-        SampleWithUserView sampleWithUser = dataManager.loadWithView(SampleWithUserView.class)
+        SampleWithUserView sampleWithUser = dataManager.load(SampleWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -137,7 +137,7 @@ public class EntityTransformationTest {
     @Test
     public void testAddingSettersByTransform() {
         //SampleWithUserView has only getters, but SampleMinimalWithUserView has setters too
-        SampleWithUserView sampleWithUser = dataManager.loadWithView(SampleWithUserView.class)
+        SampleWithUserView sampleWithUser = dataManager.load(SampleWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -160,7 +160,7 @@ public class EntityTransformationTest {
     @Test
     public void testTransformWithEntityReload() {
 
-        SampleMinimalView sampleMinimalView = dataManager.loadWithView(SampleMinimalView.class)
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()

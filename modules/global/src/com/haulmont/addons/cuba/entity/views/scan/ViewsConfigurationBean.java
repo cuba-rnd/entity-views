@@ -7,17 +7,16 @@ import com.haulmont.addons.cuba.entity.views.scan.exception.ViewInitializationEx
 import com.haulmont.chile.core.annotations.MetaProperty;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
-import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
+import com.haulmont.cuba.core.sys.events.AppContextInitializedEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.BeanDefinitionValidationException;
-import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Component;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -36,7 +35,8 @@ import java.util.stream.Collectors;
  * for entity views for extended entities and prevents cyclic references between entity views. <br>
  * The class is in application context despite on fact that it is not marked as a Spring component.
  */
-public class ViewsConfigurationBean implements InitializingBean, ApplicationListener<AppContextStartedEvent>, ViewsConfiguration {
+
+public class ViewsConfigurationBean implements ViewsConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ViewsConfigurationBean.class);
 
@@ -46,13 +46,10 @@ public class ViewsConfigurationBean implements InitializingBean, ApplicationList
         this.viewInterfaceDefinitions.putAll(viewInterfaceDefinitions);
     }
 
-    @Override
-    public void afterPropertiesSet() {
+    @EventListener(AppContextInitializedEvent.class)
+    @Order
+    public void onAppContextInitializedEvent()  {
         buildViewSubstitutionChain();
-    }
-
-    @Override
-    public void onApplicationEvent(AppContextStartedEvent event) {
         log.debug("Creating CUBA views for EntityViews");
         for (Class<? extends BaseEntityView> interfaceClass : viewInterfaceDefinitions.keySet()) {
             log.debug("Creating view for {}", interfaceClass);
@@ -60,6 +57,56 @@ public class ViewsConfigurationBean implements InitializingBean, ApplicationList
             info.setView(composeCubaView(interfaceClass, Collections.emptySet()));
         }
     }
+
+    @Override
+    public Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> getViewInterfaceDefinitions() {
+        return Collections.unmodifiableMap(viewInterfaceDefinitions);
+    }
+
+    @Override
+    public ViewInterfaceInfo getViewInterfaceDefinition(Class<? extends BaseEntityView> interfaceClass) {
+        return viewInterfaceDefinitions.get(interfaceClass);
+    }
+
+    /**
+     * Returns effective entity view class based on entity view substitution chain.
+     *
+     * @param viewInterface Initial view interface type that we want to return in our code.
+     * @return Effective entity view class.
+     */
+    @Override
+    public Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface) {
+        log.trace("Getting effective view for {}", viewInterface);
+        ViewInterfaceInfo info = viewInterfaceDefinitions.get(viewInterface);
+        if (info == null) {
+            throw new ViewInitializationException(
+                    String.format("View interface %s was not initially registered in ViewsConfigurationBean#scan",
+                            viewInterface)
+            );
+        }
+        while (info.getReplacedBy() != null) {
+            info = viewInterfaceDefinitions.get(info.getReplacedBy());
+        }
+        log.trace("Effective view for {} is {}", viewInterface, info.getViewInterface());
+        return info.getViewInterface();
+    }
+
+
+    /**
+     * Returns CUBA view definition based on Entity View class.
+     *
+     * @param viewInterface Entity view class.
+     * @return CUBA view.
+     */
+    @Override
+    public View getViewByInterface(Class<? extends BaseEntityView> viewInterface) {
+        ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
+        if (viewInterfaceInfo == null) {
+            throw new ViewInitializationException(String.format("View %s is not registered", viewInterface));
+        }
+        return viewInterfaceInfo.getView();
+    }
+
 
     /**
      * Creates entity views substitution chain by going through existing reverse substitution chain that was created
@@ -167,29 +214,6 @@ public class ViewsConfigurationBean implements InitializingBean, ApplicationList
     }
 
     /**
-     * Returns effective entity view class based on entity view substitution chain.
-     *
-     * @param viewInterface Initial view interface type that we want to return in our code.
-     * @return Effective entity view class.
-     */
-    @Override
-    public Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface) {
-        log.trace("Getting effective view for {}", viewInterface);
-        ViewInterfaceInfo info = viewInterfaceDefinitions.get(viewInterface);
-        if (info == null) {
-            throw new ViewInitializationException(
-                    String.format("View interface %s was not initially registered in ViewsConfigurationBean#scan",
-                            viewInterface)
-            );
-        }
-        while (info.getReplacedBy() != null) {
-            info = viewInterfaceDefinitions.get(info.getReplacedBy());
-        }
-        log.trace("Effective view for {} is {}", viewInterface, info.getViewInterface());
-        return info.getViewInterface();
-    }
-
-    /**
      * Adds a property to a CUBA view.
      *
      * @param targetView View to be modified.
@@ -221,20 +245,6 @@ public class ViewsConfigurationBean implements InitializingBean, ApplicationList
         }
     }
 
-    /**
-     * Returns CUBA view definition based on Entity View class.
-     *
-     * @param viewInterface Entity view class.
-     * @return CUBA view.
-     */
-    @Override
-    public View getViewByInterface(Class<? extends BaseEntityView> viewInterface) {
-        ViewInterfaceInfo viewInterfaceInfo = viewInterfaceDefinitions.get(viewInterface);
-        if (viewInterfaceInfo == null) {
-            throw new ViewInitializationException(String.format("View %s is not registered", viewInterface));
-        }
-        return viewInterfaceInfo.getView();
-    }
 
     /**
      * POJO containing all information about view interface.

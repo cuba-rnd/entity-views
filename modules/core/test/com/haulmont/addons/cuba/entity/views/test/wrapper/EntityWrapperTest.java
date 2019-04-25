@@ -1,7 +1,6 @@
 package com.haulmont.addons.cuba.entity.views.test.wrapper;
 
 import com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper;
-import com.haulmont.addons.cuba.entity.views.global.ViewSupportDataManager;
 import com.haulmont.addons.cuba.entity.views.scan.ViewsConfiguration;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
@@ -11,6 +10,7 @@ import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleWithUserV
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.security.entity.User;
 import org.junit.After;
@@ -30,7 +30,7 @@ public class EntityWrapperTest {
     private static final Logger log = LoggerFactory.getLogger(EntityWrapperTest.class);
 
     private Persistence persistence;
-    private ViewSupportDataManager dataManager;
+    private DataManager dataManager;
     private SampleEntity data1, data2;
     private User user;
     private ViewsConfiguration viewsConfig;
@@ -41,7 +41,7 @@ public class EntityWrapperTest {
         log.info("Java Version: {}", System.getProperty("java.version", "Cannot read Java version from system properties"));
 
         persistence = cont.persistence();
-        dataManager = AppBeans.get(ViewSupportDataManager.class);
+        dataManager = AppBeans.get(DataManager.class);
         viewsConfig = AppBeans.get(ViewsConfiguration.class);
 
         user = dataManager.load(ExtendedUser.class).one();

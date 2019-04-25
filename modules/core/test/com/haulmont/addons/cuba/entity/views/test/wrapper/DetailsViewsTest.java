@@ -1,7 +1,6 @@
 package com.haulmont.addons.cuba.entity.views.test.wrapper;
 
 import com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper;
-import com.haulmont.addons.cuba.entity.views.global.ViewSupportDataManager;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.EntityParameter;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.ParameterNameOnly;
@@ -9,6 +8,7 @@ import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleWithPar
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import org.junit.After;
@@ -33,7 +33,7 @@ public class DetailsViewsTest {
 
     private Metadata metadata;
     private Persistence persistence;
-    private ViewSupportDataManager dataManager;
+    private DataManager dataManager;
     private SampleEntity data1, data2, data3;
     private EntityParameter param1, param2, param3, param4;
 
@@ -46,7 +46,7 @@ public class DetailsViewsTest {
         cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
         metadata = cont.metadata();
         persistence = cont.persistence();
-        dataManager = AppBeans.get(ViewSupportDataManager.class);
+        dataManager = AppBeans.get(DataManager.class);
 
         data1 = metadata.create(SampleEntity.class);
         data1.setName("Data1");
@@ -93,7 +93,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testMasterDetailsComposition(){
-        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1")
                 .list().get(0);
@@ -105,7 +105,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testEmptyDetails(){
-        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list().get(0);
@@ -116,7 +116,7 @@ public class DetailsViewsTest {
     @Test
     public void testAddChild() {
         SampleWithParameters parent = dataManager
-                .loadWithView(SampleWithParameters.class)
+                .load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1")
                 .list().get(0);
@@ -131,7 +131,7 @@ public class DetailsViewsTest {
         dataManager.commit(child);
 
         parent = dataManager
-                .loadWithView(SampleWithParameters.class)
+                .load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1")
                 .list().get(0);
@@ -143,7 +143,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testComposition(){
-        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data3")
                 .list().get(0);
@@ -154,13 +154,13 @@ public class DetailsViewsTest {
 
     @Test
     public void testDeleteComposition(){
-        SampleWithParameters sampleWithParameters = dataManager.loadWithView(SampleWithParameters.class)
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data3")
                 .list().get(0);
         dataManager.remove(sampleWithParameters);
 
-        List<SampleWithParameters> testList = dataManager.loadWithView(SampleWithParameters.class)
+        List<SampleWithParameters> testList = dataManager.load(SampleWithParameters.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data3")
                 .list();

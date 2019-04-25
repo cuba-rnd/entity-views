@@ -6,10 +6,12 @@ import com.haulmont.cuba.testsupport.TestContainer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Ignore
 public class CyclicViewsTest {
 
     @ClassRule

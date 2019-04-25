@@ -1,7 +1,7 @@
 package com.haulmont.addons.cuba.entity.views.test.wrapper;
 
+import com.haulmont.addons.cuba.entity.views.ViewsSupportDataManagerBean;
 import com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper;
-import com.haulmont.addons.cuba.entity.views.global.ViewSupportDataManager;
 import com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
@@ -11,6 +11,7 @@ import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleMinimalWi
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.MetadataTools;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
@@ -42,7 +43,7 @@ public class BaseEntityViewTest {
     private Persistence persistence;
 
     @Mocked
-    private ViewSupportDataManager dataManager;
+    private DataManager dataManager;
 
     private SampleEntity data1, data2;
     private User user;
@@ -58,7 +59,7 @@ public class BaseEntityViewTest {
         Metadata metadata = cont.metadata();
         persistence = cont.persistence();
         metadataTools = AppBeans.get(MetadataTools.class);
-        dataManager = AppBeans.get(ViewSupportDataManager.class);
+        dataManager = AppBeans.get(DataManager.class);
         entityStates = AppBeans.get(ViewsSupportEntityStates.class);
 
         user = dataManager.load(ExtendedUser.class).one();
@@ -86,7 +87,7 @@ public class BaseEntityViewTest {
 
     @Test
     public void testEmbeddedView() {
-        SampleMinimalWithUserView swu = dataManager.loadWithView(SampleMinimalWithUserView.class)
+        SampleMinimalWithUserView swu = dataManager.load(SampleMinimalWithUserView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1").list().get(0);
 
@@ -100,7 +101,7 @@ public class BaseEntityViewTest {
     @Test
     public void testDefaultMethod() {
 
-        SampleMinimalView sampleMinimal = dataManager.loadWithView(SampleMinimalView.class)
+        SampleMinimalView sampleMinimal = dataManager.load(SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data1")
                 .list()
@@ -114,7 +115,7 @@ public class BaseEntityViewTest {
     @Test
     public void testDefaultMethodEmbedded() {
 
-        SampleWithParentView sampleMinimal = dataManager.loadWithView(SampleWithParentView.class)
+        SampleWithParentView sampleMinimal = dataManager.load(SampleWithParentView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -127,7 +128,7 @@ public class BaseEntityViewTest {
     @Test
     public void testEntityViewIsEntity() {
 
-        SampleMinimalView sampleMinimalView = dataManager.loadWithView(SampleMinimalView.class)
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleMinimalView.class)
                 .query("select e from playground$SampleEntity e where e.name = :name")
                 .parameter("name", "Data2")
                 .list()
@@ -146,7 +147,7 @@ public class BaseEntityViewTest {
 
     @Test
     public void testCreateNewEntity() {
-        SampleMinimalView sample = dataManager.createWithView(SampleMinimalView.class);
+        SampleMinimalView sample = dataManager.create(SampleMinimalView.class);
         assertNull(sample.getName());
         assertNull(sample.getValue("name"));
         assertTrue(entityStates.isNew(sample));
@@ -154,7 +155,7 @@ public class BaseEntityViewTest {
 
     @Test
     public void testSaveNewEntity() {
-        SampleMinimalView sample = dataManager.createWithView(SampleMinimalView.class);
+        SampleMinimalView sample = dataManager.create(SampleMinimalView.class);
         sample.setName("TestName");
         assertTrue(entityStates.isNew(sample));
         sample = dataManager.commit(sample);
@@ -167,21 +168,20 @@ public class BaseEntityViewTest {
 
     @Test
     public void testSaveNewEntityAndRewrap() {
-        SampleMinimalView sample = dataManager.createWithView(SampleMinimalView.class);
+        SampleMinimalView sample = dataManager.create(SampleMinimalView.class);
         sample.setName("TestName");
-        SampleMinimalWithUserView sampleWithUser = dataManager.commit(sample, SampleMinimalWithUserView.class);
+        SampleMinimalView sampleWithUser = dataManager.commit(sample);
         assertNotNull(sample.getId());
         assertEquals("TestName", sampleWithUser.getName());
         assertEquals("TestName", sampleWithUser.getValue("name"));
-        assertNull(sampleWithUser.getUser());
         assertTrue(entityStates.isDetached(sampleWithUser));
     }
 
     @Test
     public void testSetViewEntity() {
-        SampleMinimalWithUserView sampleWithUser = dataManager.createWithView(SampleMinimalWithUserView.class);
+        SampleMinimalWithUserView sampleWithUser = dataManager.create(SampleMinimalWithUserView.class);
         sampleWithUser.setName("TestName");
-        sampleWithUser = dataManager.commit(sampleWithUser, SampleMinimalWithUserView.class);
+        sampleWithUser = dataManager.commit(sampleWithUser);
         assertNull(sampleWithUser.getUser());
         sampleWithUser.setUser(EntityViewWrapper.wrap(user, SampleMinimalWithUserView.UserMinimalView.class));
         sampleWithUser = dataManager.commit(sampleWithUser);
