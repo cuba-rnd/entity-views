@@ -29,7 +29,7 @@ def webModule = project(artifactWebName)
 def servletApi = 'javax.servlet:javax.servlet-api:3.1.0'
 
 def artifactGroup = 'com.haulmont.addons.cuba.entity.views'
-def artifactVersion = '0.1.2'
+def artifactVersion = '0.1.1'
 def isArtifactSnapshot = false
 
 apply(plugin: 'cuba')
