@@ -1,6 +1,5 @@
 package com.haulmont.addons.cuba.entity.views.test.wrapper;
 
-import com.haulmont.addons.cuba.entity.views.ViewsSupportDataManagerBean;
 import com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper;
 import com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
@@ -10,6 +9,7 @@ import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleWithPar
 import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleMinimalWithUserView;
 import com.haulmont.bali.db.QueryRunner;
 import com.haulmont.cuba.core.Persistence;
+import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.DataManager;
 import com.haulmont.cuba.core.global.Metadata;
@@ -24,6 +24,8 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -83,6 +85,26 @@ public class BaseEntityViewTest {
     public void tearDown() throws Exception {
         QueryRunner runner = new QueryRunner(persistence.getDataSource());
         runner.update("delete from PLAYGROUND_SAMPLE_ENTITY");
+    }
+
+
+    @Test
+    public void testLoadList() {
+        List<SampleMinimalWithUserView> swuList = dataManager.load(SampleMinimalWithUserView.class).list();
+        Assert.assertTrue(swuList.size() > 0);
+    }
+
+    @Test
+    public void testLoadOne() {
+        SampleMinimalWithUserView swu = dataManager.load(SampleMinimalWithUserView.class).id(data1.getId()).one();
+        Assert.assertEquals(swu.getName(), data1.getName());
+    }
+
+
+    @Test
+    public void testLoadOneById() {
+        SampleMinimalWithUserView swu = dataManager.load(Id.of(data1.getId(), SampleMinimalWithUserView.class)).one();
+        Assert.assertEquals(swu.getName(), data1.getName());
     }
 
     @Test

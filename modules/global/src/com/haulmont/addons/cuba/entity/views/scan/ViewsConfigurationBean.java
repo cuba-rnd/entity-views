@@ -42,6 +42,8 @@ public class ViewsConfigurationBean implements ViewsConfiguration {
 
     private final Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions = new ConcurrentHashMap<>();
 
+    private final Map<View, ViewInterfaceInfo> definitionsByView = new ConcurrentHashMap<>();
+
     public ViewsConfigurationBean(Map<Class<? extends BaseEntityView>, ViewInterfaceInfo> viewInterfaceDefinitions) {
         this.viewInterfaceDefinitions.putAll(viewInterfaceDefinitions);
     }
@@ -54,7 +56,9 @@ public class ViewsConfigurationBean implements ViewsConfiguration {
         for (Class<? extends BaseEntityView> interfaceClass : viewInterfaceDefinitions.keySet()) {
             log.debug("Creating view for {}", interfaceClass);
             ViewInterfaceInfo info = viewInterfaceDefinitions.get(interfaceClass);
-            info.setView(composeCubaView(interfaceClass, Collections.emptySet()));
+            View cubaView = composeCubaView(interfaceClass, Collections.emptySet());
+            info.setView(cubaView);
+            definitionsByView.put(cubaView, info);
         }
     }
 
@@ -107,6 +111,10 @@ public class ViewsConfigurationBean implements ViewsConfiguration {
         return viewInterfaceInfo.getView();
     }
 
+    @Override
+    public ViewInterfaceInfo getViewInfoByView(View view) {
+        return definitionsByView.get(view);
+    }
 
     /**
      * Creates entity views substitution chain by going through existing reverse substitution chain that was created
@@ -271,7 +279,7 @@ public class ViewsConfigurationBean implements ViewsConfiguration {
             return viewInterface;
         }
 
-        public Class<Entity> getEntityClass() {
+        public Class<? extends Entity> getEntityClass() {
             return entityClass;
         }
 

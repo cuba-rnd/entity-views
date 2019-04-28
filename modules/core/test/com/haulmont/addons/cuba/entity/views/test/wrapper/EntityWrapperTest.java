@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class EntityWrapperTest {
 
@@ -67,6 +68,11 @@ public class EntityWrapperTest {
         runner.update("delete from PLAYGROUND_SAMPLE_ENTITY");
     }
 
+    @Test
+    public void testWrapNull() {
+        SampleMinimalWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(null, SampleMinimalWithUserView.UserMinimalView.class);
+        assertNull(userMinimal);
+    }
 
     @Test
     public void testWrapUser() {

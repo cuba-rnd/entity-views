@@ -20,8 +20,13 @@ buildscript {
 def modulePrefix = 'entity-views'
 def artifactGlobalName = modulePrefix + "-global"
 def artifactCoreName = modulePrefix + "-core"
+def artifactWebName = modulePrefix + "-web"
+
 def globalModule = project(artifactGlobalName)
 def coreModule = project(artifactCoreName)
+def webModule = project(artifactWebName)
+
+def servletApi = 'javax.servlet:javax.servlet-api:3.1.0'
 
 def artifactGroup = 'com.haulmont.addons.cuba.entity.views'
 def artifactVersion = '0.1.2'
@@ -41,7 +46,7 @@ dependencies {
     appComponent("com.haulmont.cuba:cuba-global:$cubaVersion")
 }
 
-configure([globalModule, coreModule]) {
+configure([globalModule, coreModule, webModule]) {
 
     apply(plugin: 'java')
     apply(plugin: 'maven')
@@ -72,6 +77,14 @@ configure([globalModule, coreModule]) {
 }
 
 configure(globalModule) {
+
+    dependencies {
+        if (!JavaVersion.current().isJava8()) {
+            runtime('javax.xml.bind:jaxb-api:2.3.1')
+            runtime('org.glassfish.jaxb:jaxb-runtime:2.3.1')
+        }
+    }
+
 
     jar {
         manifest {
@@ -144,7 +157,7 @@ configure(coreModule) {
             enabled = true
         }
     }
-
+    
     task startDb(type: CubaHsqlStart) {
         dbName = 'entityviews'
     }
@@ -170,6 +183,34 @@ configure(coreModule) {
     }
 
 }
+
+configure(webModule) {
+
+    dependencies {
+        compileOnly(servletApi)
+        compile(globalModule)
+    }
+
+    publishing {
+        publications {
+            publishWeb(MavenPublication) {
+                groupId = artifactGroup
+                artifactId = artifactWebName
+                version = artifactVersion
+                from components.java
+                artifact sourceJar
+                artifact javadocJar
+            }
+        }
+    }
+    
+    bintray {
+        publications = ['publishWeb']
+    }
+
+
+}
+
 
 subprojects {
     bintray {

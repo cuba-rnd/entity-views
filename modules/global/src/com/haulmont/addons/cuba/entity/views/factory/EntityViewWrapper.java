@@ -294,7 +294,16 @@ public class EntityViewWrapper {
          */
         private Object wrapResult(Method method, Method entityMethod, Object result) {
             if (result == null) {
-                return null;
+                return result;
+            }
+            if (result instanceof BaseEntityView && isWrappable(method, entityMethod)) {
+                Class<?> srcViewType = ((BaseEntityView) result).getInterfaceClass();
+                Class<?> dstViewType = getReturnViewType(method);
+                if (srcViewType == dstViewType) {
+                    return result;
+                } else {
+                    return ((BaseEntityView)result).reload(dstViewType);
+                }
             }
             if (result instanceof List) {//TODO we need to cover Set and Collection here
                 Class<?> returnType = getReturnViewType(method);

@@ -16,4 +16,6 @@ public interface ViewsConfiguration {
     Class<? extends BaseEntityView> getEffectiveView(Class<? extends BaseEntityView> viewInterface);
 
     View getViewByInterface(Class<? extends BaseEntityView> viewInterface);
+
+    ViewsConfigurationBean.ViewInterfaceInfo getViewInfoByView(View view);
 }
