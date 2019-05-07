@@ -96,14 +96,21 @@ public class ViewsSupportDataManagerBean extends DataManagerBean {
     @Override
     public EntitySet commit(CommitContext context) {
 
-        Collection<Entity> entities = context.getCommitInstances().stream().map(e -> {
+        Collection<Entity> entitiesToCommit = context.getCommitInstances().stream().map(e -> {
                     if (e instanceof BaseEntityView)
                         return ((BaseEntityView) e).getOrigin();
                     else return e;
                 }
         ).collect(Collectors.toList());
+        context.setCommitInstances(entitiesToCommit);
 
-        context.setCommitInstances(entities);
+        Collection<Entity> entitiesToRemove = context.getRemoveInstances().stream().map(e -> {
+                    if (e instanceof BaseEntityView)
+                        return ((BaseEntityView) e).getOrigin();
+                    else return e;
+                }
+        ).collect(Collectors.toList());
+        context.setRemoveInstances(entitiesToRemove);
 
         EntitySet commitSet = super.commit(context);
 

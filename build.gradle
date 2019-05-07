@@ -29,8 +29,8 @@ def webModule = project(artifactWebName)
 def servletApi = 'javax.servlet:javax.servlet-api:3.1.0'
 
 def artifactGroup = 'com.haulmont.addons.cuba.entity.views'
-def artifactVersion = '0.1.1'
-def isArtifactSnapshot = false
+def artifactVersion = '0.1.2'
+def isArtifactSnapshot = true
 
 apply(plugin: 'cuba')
 
@@ -98,7 +98,7 @@ configure(globalModule) {
             publishGlobal(MavenPublication) {
                 groupId = artifactGroup
                 artifactId = artifactGlobalName
-                version = artifactVersion
+                version = artifactVersion + (cuba.artifact.isSnapshot ? '-SNAPSHOT' : '')
                 from components.java
                 artifact sourceJar
                 artifact javadocJar
@@ -139,7 +139,7 @@ configure(coreModule) {
             publishCore(MavenPublication) {
                 groupId = artifactGroup
                 artifactId = artifactCoreName
-                version = artifactVersion
+                version = artifactVersion + (cuba.artifact.isSnapshot ? '-SNAPSHOT' : '')
                 from components.java
                 artifact sourceJar
                 artifact javadocJar
@@ -196,7 +196,7 @@ configure(webModule) {
             publishWeb(MavenPublication) {
                 groupId = artifactGroup
                 artifactId = artifactWebName
-                version = artifactVersion
+                version = artifactVersion + (cuba.artifact.isSnapshot ? '-SNAPSHOT' : '')
                 from components.java
                 artifact sourceJar
                 artifact javadocJar

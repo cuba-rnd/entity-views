@@ -1,6 +1,6 @@
-package com.haulmont.addons.cuba.entity.views;
+package com.haulmont.addons.cuba.entity.views.scan;
 
-import com.haulmont.addons.cuba.entity.views.scan.ViewsConfigurationBean;
+import com.haulmont.addons.cuba.entity.views.BaseEntityView;
 import com.haulmont.chile.core.model.MetaModel;
 import com.haulmont.chile.core.model.impl.MetaClassImpl;
 import com.haulmont.chile.core.model.impl.MetaModelImpl;

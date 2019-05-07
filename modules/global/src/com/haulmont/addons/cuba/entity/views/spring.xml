@@ -10,8 +10,6 @@
         </constructor-arg>
     </bean>
 
-
-    <bean name="cuba_EntityStates" class="com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates"/>
-
+    <bean name="cuba_EntityStates" class="com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates" primary="true"/>
 
 </beans>

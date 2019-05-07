@@ -3,12 +3,42 @@ package com.haulmont.addons.cuba.entity.views.global;
 import com.haulmont.addons.cuba.entity.views.BaseEntityView;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.EntityStates;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 /**
  * The class adds support for Entity Views to determine the state of an underlying entity.
  * @see EntityStates
  */
 public class ViewsSupportEntityStates extends EntityStates {
+
+
+    @Override
+    public boolean isNew(Object entity) {
+        if (entity instanceof BaseEntityView) {
+            return super.isNew(((BaseEntityView) entity).getOrigin());
+        } else {
+            return super.isNew(entity);
+        }
+    }
+
+    @Override
+    public boolean isManaged(Object entity) {
+        if (entity instanceof BaseEntityView) {
+            return super.isManaged(((BaseEntityView) entity).getOrigin());
+        } else {
+            return super.isManaged(entity);
+        }
+    }
+
+    @Override
+    public boolean isDetached(Object entity) {
+        if (entity instanceof BaseEntityView) {
+            return super.isDetached(((BaseEntityView) entity).getOrigin());
+        } else {
+            return super.isDetached(entity);
+        }
+    }
 
     /**
      * Determines whether the instance is <em>New</em>, i.e. just created and not stored in database yet.
