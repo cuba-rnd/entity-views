@@ -10,6 +10,15 @@
     <!-- Annotation-based beans -->
     <context:component-scan base-package="com.haulmont.addons.cuba.entity.views"/>
 
-    <bean name="cuba_MetadataLoader" class="com.haulmont.addons.cuba.entity.views.scan.ViewsSupportMetadataLoader" scope="prototype" primary="true"/>
+    <bean name="entity_views_core_ViewsConfiguration"
+          class="com.haulmont.addons.cuba.entity.views.scan.ViewsConfigurationBean">
+        <constructor-arg>
+            <map/>
+        </constructor-arg>
+    </bean>
+
+    <bean name="cuba_EntityStates" class="com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates"/>
+
+    <bean name="cuba_MetadataLoader" class="com.haulmont.addons.cuba.entity.views.scan.ViewsSupportMetadataLoader" scope="prototype"/>
 
 </beans>

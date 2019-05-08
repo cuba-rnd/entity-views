@@ -16,7 +16,12 @@
         <property name="cuba.springContextConfig"
                   value="+com/haulmont/addons/cuba/entity/views/spring.xml"/>
     </module>
-    <module name="web" dependsOn="global" blocks="web">
-        <artifact name="entity-views-web" appJar="true"/>
+    <module name="web"
+            dependsOn="global"
+            blocks="web">
+        <artifact name="entity-views-web"
+                  appJar="true"/>
+        <property name="cuba.springContextConfig"
+                  value="+com/haulmont/addons/cuba/entity/views/web-spring.xml"/>
     </module>
 </app-component>
