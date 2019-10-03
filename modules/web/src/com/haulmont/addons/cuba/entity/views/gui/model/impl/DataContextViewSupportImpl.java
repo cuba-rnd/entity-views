@@ -21,7 +21,7 @@ public class DataContextViewSupportImpl extends DataContextImpl {
     }
 
     @Override
-    protected Entity internalMerge(Entity entity, Set<Entity> mergedSet) {
+    protected Entity internalMerge(Entity entity, Set<Entity> mergedSet, boolean isRoot) {
         Map<Object, Entity> entityMap = content.computeIfAbsent(entity.getClass(), aClass -> new HashMap<>());
         Entity managed = entityMap.get(entity.getId());
 
@@ -45,7 +45,7 @@ public class DataContextViewSupportImpl extends DataContextImpl {
             managed = copyEntity(src);
             entityMap.put(managed.getId(), managed);
 
-            mergeState(src, managed, mergedSet);
+            mergeState(src, managed, mergedSet, isRoot);
 
             managed.addPropertyChangeListener(propertyChangeListener);
 
@@ -60,7 +60,7 @@ public class DataContextViewSupportImpl extends DataContextImpl {
             }
 
             if (managed != entity) {
-                mergeState(entity, managed, mergedSet);
+                mergeState(entity, managed, mergedSet, isRoot);
             }
             return wrapEntity(entity, managed);
         }
