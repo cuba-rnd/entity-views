@@ -16,7 +16,6 @@ import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.MetadataTools;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
 import com.haulmont.cuba.security.entity.User;
-import mockit.Mocked;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,7 +43,6 @@ public class BaseEntityViewTest {
     private MetadataTools metadataTools;
     private Persistence persistence;
 
-    @Mocked
     private DataManager dataManager;
 
     private SampleEntity data1, data2;
@@ -85,6 +83,21 @@ public class BaseEntityViewTest {
     public void tearDown() throws Exception {
         QueryRunner runner = new QueryRunner(persistence.getDataSource());
         runner.update("delete from PLAYGROUND_SAMPLE_ENTITY");
+    }
+
+    @Test
+    public void testLoadMinimalView() {
+        SampleMinimalView swu = dataManager.load(SampleMinimalView.class).id(data1.getId()).one();
+        Assert.assertEquals(swu.getName(), data1.getName());
+    }
+
+    @Test
+    public void testSetterMinimalView() {
+        SampleMinimalView swu = dataManager.load(SampleMinimalView.class).id(data1.getId()).one();
+        swu.setName("New name");
+        dataManager.commit(swu);
+        swu = dataManager.load(SampleMinimalView.class).id(data1.getId()).one();
+        Assert.assertEquals(swu.getName(), "New name");
     }
 
 

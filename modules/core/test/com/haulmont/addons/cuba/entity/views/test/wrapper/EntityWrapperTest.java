@@ -5,6 +5,7 @@ import com.haulmont.addons.cuba.entity.views.scan.ViewsConfiguration;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalView;
+import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalViewReplace;
 import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleMinimalWithUserView;
 import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleWithUserView;
 import com.haulmont.bali.db.QueryRunner;
@@ -91,14 +92,14 @@ public class EntityWrapperTest {
     @Test
     public void testWrapWithSubstitution() {
         SampleEntity sampleEntity = dataManager.load(SampleEntity.class).list().get(0);
-        SampleMinimalView userMinimal = EntityViewWrapper.wrap(sampleEntity, SampleMinimalView.class);
+        SampleMinimalViewReplace userMinimal = EntityViewWrapper.wrap(sampleEntity, SampleMinimalViewReplace.class);
         assertEquals(sampleEntity.getName(), userMinimal.getName());
         assertEquals(SampleMinimalWithUserView.class, userMinimal.getInterfaceClass());
     }
 
     @Test
     public void testGetInterfaceWithSubstitution() {
-        View view = viewsConfig.getViewByInterface(SampleMinimalView.class);
+        View view = viewsConfig.getViewByInterface(SampleMinimalViewReplace.class);
         View substitute = viewsConfig.getViewByInterface(SampleMinimalWithUserView.class);
         assertEquals(view.getName(), substitute.getName());
     }

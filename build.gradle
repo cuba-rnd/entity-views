@@ -1,5 +1,5 @@
 buildscript {
-    ext.cubaVersion = '7.1.1'
+    ext.cubaVersion = '7.1.4'
     repositories {
         mavenLocal()
         mavenCentral()
@@ -55,6 +55,7 @@ configure([globalModule, coreModule, webModule]) {
     apply(plugin: 'com.jfrog.bintray')
 
     dependencies {
+        compile('net.bytebuddy:byte-buddy:1.10.7')
         testCompile('junit:junit:4.12')
     }
 

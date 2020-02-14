@@ -4,6 +4,7 @@ import com.haulmont.addons.cuba.entity.views.BaseEntityView;
 import com.haulmont.addons.cuba.entity.views.scan.EntityViewName;
 import com.haulmont.addons.cuba.entity.views.scan.ReplaceEntityView;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalView;
+import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalViewReplace;
 import com.haulmont.cuba.security.entity.User;
 
 import java.util.UUID;
@@ -11,7 +12,7 @@ import java.util.UUID;
 /**
  * Created by Aleksey Stukalov on 16/08/2018.
  */
-@ReplaceEntityView(SampleMinimalView.class)
+@ReplaceEntityView(SampleMinimalViewReplace.class)
 public interface SampleMinimalWithUserView extends SampleMinimalView {
 
     UserMinimalView getUser();
@@ -27,5 +28,9 @@ public interface SampleMinimalWithUserView extends SampleMinimalView {
 
         String getName();
         void setName(String val);
+    }
+
+    interface UserMinimalView2 extends UserMinimalView {
+
     }
 }
