@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
  * Complementary annotation for entity's {@link com.haulmont.cuba.core.entity.annotation.Extends}. If a view
  * is annotated with it, it will be replaced in CUBA class hierarchy.
  */
+//TODO implement static check for inheritance
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

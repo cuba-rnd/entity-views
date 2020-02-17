@@ -55,7 +55,7 @@ configure([globalModule, coreModule, webModule]) {
     apply(plugin: 'com.jfrog.bintray')
 
     dependencies {
-        compile('net.bytebuddy:byte-buddy:1.10.7')
+        compile('org.javassist:javassist:3.26.0-GA')
         testCompile('junit:junit:4.12')
     }
 

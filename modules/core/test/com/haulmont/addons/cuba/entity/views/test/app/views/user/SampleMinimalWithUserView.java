@@ -13,7 +13,7 @@ import java.util.UUID;
  * Created by Aleksey Stukalov on 16/08/2018.
  */
 @ReplaceEntityView(SampleMinimalViewReplace.class)
-public interface SampleMinimalWithUserView extends SampleMinimalView {
+public interface SampleMinimalWithUserView extends SampleMinimalViewReplace {
 
     UserMinimalView getUser();
 

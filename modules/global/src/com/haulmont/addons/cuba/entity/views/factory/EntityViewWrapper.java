@@ -5,63 +5,31 @@ import com.haulmont.addons.cuba.entity.views.BaseEntityView;
 import com.haulmont.addons.cuba.entity.views.scan.ViewsConfiguration;
 import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.chile.core.model.MetaClass;
-import com.haulmont.cuba.core.config.ConfigHandler;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.AppBeans;
-import com.haulmont.cuba.core.global.DataManager;
-import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.View;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.ClassFileVersion;
-import net.bytebuddy.NamingStrategy;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.description.modifier.ModifierContributor;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.dynamic.scaffold.InstrumentedType;
-import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
-import net.bytebuddy.implementation.DefaultMethodCall;
-import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bytecode.StackManipulation;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
-import net.bytebuddy.implementation.bytecode.assign.TypeCasting;
-import net.bytebuddy.implementation.bytecode.assign.primitive.PrimitiveTypeAwareAssigner;
-import net.bytebuddy.implementation.bytecode.assign.primitive.VoidAwareAssigner;
-import net.bytebuddy.implementation.bytecode.assign.reference.GenericTypeAwareAssigner;
-import net.bytebuddy.implementation.bytecode.member.MethodInvocation;
-import net.bytebuddy.matcher.ElementMatchers;
-import net.bytebuddy.utility.JavaConstant;
-import net.bytebuddy.utility.RandomString;
-import org.apache.commons.lang3.ClassUtils;
+import javassist.CannotCompileException;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtConstructor;
+import javassist.Loader;
+import javassist.NotFoundException;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.eclipse.persistence.internal.codegen.MethodDefinition;
-import org.eclipse.persistence.jpa.jpql.parser.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.tools.ForwardingJavaFileManager;
-import java.io.Serializable;
-import java.lang.invoke.MethodHandles;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static net.bytebuddy.matcher.ElementMatchers.named;
 
 /**
  * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
@@ -90,25 +58,16 @@ public class EntityViewWrapper {
         log.trace("Effective view: {}", effectiveView);
 
         try {
-            V bbProxy = (V) wrapEntity(entity, effectiveView);
-            log.info(String.valueOf(bbProxy.getId()));
-            return bbProxy;
+            V wrappedEntity = (V) wrapEntity(entity, effectiveView);
+            log.info(String.valueOf(wrappedEntity.getId()));
+            return wrappedEntity;
         } catch (Exception e) {
             throw new RuntimeException("Cannot wrap entity into the View", e);
         }
     }
 
     private static <E extends Entity<K>, V extends BaseEntityView<E, K>, K> V wrapEntity(E entity, Class<V> viewInterface)
-            throws IllegalAccessException, InstantiationException {
-
-        ByteBuddy bb = new ByteBuddy(ClassFileVersion.ofThisVm());
-
-/*
-        List<TypeVariable<? extends Class<?>>[]> typeVariables = ClassUtils.getAllInterfaces(viewInterface).stream()
-                .filter(BaseEntityView.class::isAssignableFrom)
-                .map(Class::getTypeParameters)
-                .collect(Collectors.toList());
-*/
+            throws NotFoundException, IOException, CannotCompileException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
 
         Type[] actualTypeArguments = ((ParameterizedType) (((Class<?>) (viewInterface.getGenericInterfaces()[0])).getGenericInterfaces()[0])).getActualTypeArguments();
 
@@ -124,84 +83,19 @@ public class EntityViewWrapper {
 
         typeArguments.add(1, viewInterface);
 
-        TypeDescription.Generic generic = TypeDescription.Generic.Builder.parameterizedType(BaseEntityViewImpl.class, typeArguments).build();
-
-        DynamicType.Builder definition = bb.subclass(generic)
-                .implement(viewInterface);
-
         List<Method> methodList = Arrays.stream(viewInterface.getMethods())
                 .filter((method) -> MethodUtils.getMatchingMethod(BaseEntityViewImpl.class, method.getName(), method.getParameterTypes()) == null)
                 .collect(Collectors.toList());
 
-        try {
-
-            for (Method m : methodList) {
-                if (m.isDefault()) {
-                    definition = definition.defineMethod(m.getName(), m.getReturnType(), m.getModifiers())
-                            .withParameters(m.getParameterTypes())
-                            .intercept(DefaultMethodCall.unambiguousOnly());
-                } else {
-                    Method methodToExecute = getDelegateMethodCandidate(m, entity.getClass());
-                    if (methodToExecute != null) {
-                        log.info("Delegating {} to {}", m, methodToExecute);
-                        definition = definition.defineMethod(m.getName(), m.getReturnType(), m.getModifiers())
-                                .withParameters(m.getParameterTypes())
-                                .intercept(MethodCall.invoke(methodToExecute)
-                                        .on(entity)
-                                        .withAllArguments().with(new MethodCall.ArgumentLoader.Factory() {
-                                            @Override
-                                            public MethodCall.ArgumentLoader.ArgumentProvider make(Implementation.Target implementationTarget) {
-                                                return null;
-                                            }
-
-                                            @Override
-                                            public InstrumentedType prepare(InstrumentedType instrumentedType) {
-                                                return null;
-                                            }
-                                        }));
-                    } else {
-                        throw new IllegalArgumentException("Method " + m + " cannot be intercepted because there is no suitable method in class " + entity.getClass());
-                    }
-                }
-            }
-
-            Class<? extends BaseEntityViewImpl> loaded = definition.make().load(entity.getClass().getClassLoader()).getLoaded();
-
-            return (V) loaded.getConstructor(Entity.class, viewInterface.getClass()).newInstance(entity, viewInterface);
-        } catch (InvocationTargetException | NoSuchMethodException e) {
-            throw new IllegalArgumentException("Cannot instantiate wrapper", e);
-        }
-
-    }
-
-    enum WrappingAssigner implements Assigner {
-
-        INSTANCE;
-
-        @Override
-        public StackManipulation assign(TypeDescription.Generic source, TypeDescription.Generic target, Typing typing) {
-            try {
-                if (BaseEntityView.class.isAssignableFrom(Class.forName(source.getTypeName()))
-                        && Entity.class.isAssignableFrom(Class.forName(target.getTypeName()))) {
-                    log.info("Needs unwrapping: Source {}, Target {}", source, target);
-                    MethodDescription getOriginMethod = new TypeDescription.ForLoadedType(BaseEntityViewImpl.class)
-                            .getDeclaredMethods()
-                            .filter(named("getOrigin"))
-                            .getOnly();
-                    return MethodInvocation.
-                            invoke(getOriginMethod)
-                            .dynamic(getOriginMethod.getName(), target.asErasure(), Collections.emptyList(), Collections.emptyList());
-                }
-                if (BaseEntityView.class.isAssignableFrom(Class.forName(target.getTypeName()))
-                        && Entity.class.isAssignableFrom(Class.forName(source.getTypeName()))) {
-                    log.info("Needs wrapping: Source {}, Target {}", source, target);
-                    return StackManipulation.Trivial.INSTANCE;
-                }
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Cannot create proper assignment", e);
-            }
-            return StackManipulation.Trivial.INSTANCE;
-        }
+        ClassPool pool = ClassPool.getDefault();
+        CtClass baseClass = pool.get("com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper$BaseEntityViewImpl");
+        CtClass viewIf = pool.get(viewInterface.getName());
+        CtClass wrapper = pool.makeClass("com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper" + viewInterface.getSimpleName(), baseClass);
+        wrapper.addInterface(viewIf);
+        wrapper.writeFile();
+        Class<?> aClass = wrapper.toClass();
+        Constructor<?> constructor = aClass.getConstructors()[0];
+        return (V) constructor.newInstance(entity, viewInterface);
     }
 
 
