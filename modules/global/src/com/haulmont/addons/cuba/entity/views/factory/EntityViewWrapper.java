@@ -12,8 +12,14 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
+import javassist.CtMember;
+import javassist.CtMethod;
+import javassist.CtNewMethod;
 import javassist.Loader;
 import javassist.NotFoundException;
+import javassist.bytecode.BadBytecode;
+import javassist.bytecode.ClassFile;
+import javassist.bytecode.SignatureAttribute;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
@@ -67,63 +74,104 @@ public class EntityViewWrapper {
     }
 
     private static <E extends Entity<K>, V extends BaseEntityView<E, K>, K> V wrapEntity(E entity, Class<V> viewInterface)
-            throws NotFoundException, IOException, CannotCompileException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+            throws Exception {
 
-        Type[] actualTypeArguments = ((ParameterizedType) (((Class<?>) (viewInterface.getGenericInterfaces()[0])).getGenericInterfaces()[0])).getActualTypeArguments();
-
-        List<Class<?>> typeArguments = Collections.EMPTY_LIST;
-
-        typeArguments = Arrays.stream(actualTypeArguments).map((arg) -> {
-            try {
-                return Class.forName(arg.getTypeName());
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }).collect(Collectors.toList());
-
-        typeArguments.add(1, viewInterface);
-
-        List<Method> methodList = Arrays.stream(viewInterface.getMethods())
-                .filter((method) -> MethodUtils.getMatchingMethod(BaseEntityViewImpl.class, method.getName(), method.getParameterTypes()) == null)
-                .collect(Collectors.toList());
-
+        String wrapperName = "com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper" + viewInterface.getSimpleName();
         ClassPool pool = ClassPool.getDefault();
-        CtClass baseClass = pool.get("com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper$BaseEntityViewImpl");
-        CtClass viewIf = pool.get(viewInterface.getName());
-        CtClass wrapper = pool.makeClass("com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper" + viewInterface.getSimpleName(), baseClass);
-        wrapper.addInterface(viewIf);
-        wrapper.writeFile();
-        Class<?> aClass = wrapper.toClass();
+
+        CtClass wrapper = pool.getOrNull(wrapperName);
+        Class<?> aClass = null;
+        if (wrapper == null) {
+            CtClass baseClass = pool.get("com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper$BaseEntityViewImpl");
+            CtClass viewIf = pool.get(viewInterface.getName());
+            CtClass wrapperClass = pool.makeClass(wrapperName, baseClass);
+            wrapperClass.addInterface(viewIf);
+
+            String[] genericTypesList = getInterfaceGenerics(viewIf).toArray(new String[0]);
+            CtClass[] genericClasses = pool.get(genericTypesList);
+
+            CtMethod getOrigin = CtNewMethod.make(genericClasses[0], "getOrigin", null, null, "return (" + genericClasses[0].getName() + ")entity;", wrapperClass);
+            wrapperClass.addMethod(getOrigin);
+
+
+            wrapperClass.debugWriteFile("c:/temp");
+
+            //Get ViewInterface signature
+
+            //Add generic signature
+            List<Method> methodList = Arrays.stream(viewInterface.getMethods())
+                    .filter(method -> MethodUtils.getMatchingMethod(BaseEntityViewImpl.class, method.getName(), method.getParameterTypes()) == null
+                            && !method.isDefault())
+                    .collect(Collectors.toList());
+            methodList.forEach(m -> addDelegateMethod(wrapperClass, m, pool));
+            wrapperClass.writeFile();
+            wrapper = wrapperClass;
+            aClass = wrapper.toClass();
+        } else {
+            aClass = Class.forName(wrapperName);
+        }
         Constructor<?> constructor = aClass.getConstructors()[0];
         return (V) constructor.newInstance(entity, viewInterface);
     }
 
-
-    /**
-     * Checks if a method's invocation can be delegated to a class.
-     *
-     * @param delegateFromMethod Method to be invoked.
-     * @param delegateToClass    Candidate class.
-     * @return Method instance if the class contain its definition.
-     */
-    static Method getDelegateMethodCandidate(Method delegateFromMethod, Class<?> delegateToClass) {
-        String fromMethodName = delegateFromMethod.getName();
-        Class<?>[] parameterTypes = delegateFromMethod.getParameterTypes();
-
-        Method entityMethod = MethodUtils.getAccessibleMethod(delegateToClass, fromMethodName, parameterTypes);
-
-        if (entityMethod != null &&
-                (delegateFromMethod.getReturnType().isAssignableFrom(entityMethod.getReturnType())
-                        || isWrappable(delegateFromMethod, entityMethod))) {
-            return entityMethod;
-        } else if (isSetterWithView(delegateFromMethod, parameterTypes)) {
-            entityMethod = Arrays.stream(delegateToClass.getMethods())
-                    .filter(method -> method.getName().equals(fromMethodName) && method.getParameterCount() == 1)
-                    .findFirst().orElse(null);
-            return entityMethod;
+    private static List<String> getInterfaceGenerics(CtClass viewIf) throws BadBytecode, NotFoundException {
+        String genericSignature = viewIf.getGenericSignature();
+        while (genericSignature == null && viewIf.getInterfaces().length > 0) {
+            viewIf = viewIf.getInterfaces()[0];
+            genericSignature = viewIf.getGenericSignature();
         }
+        SignatureAttribute.ClassSignature classSignature = SignatureAttribute.toClassSignature(viewIf.getGenericSignature());
+        SignatureAttribute.ClassType[] interfaces = classSignature.getInterfaces();
+        if (interfaces.length != 1) {
+            throw new IllegalArgumentException("You should implement only one Entity View interface");
+        }
+        SignatureAttribute.TypeArgument[] typeArguments = interfaces[0].getTypeArguments();
+        if (typeArguments.length != 2) {
+            throw new IllegalArgumentException("There must be two type arguments in the Entity View interface");
+        }
+        return Arrays.stream(typeArguments).map(type -> type.getType().jvmTypeName()).collect(Collectors.toList());
+    }
 
-        return null;
+    private static void addDelegateMethod(CtClass wrapper, Method m, ClassPool pool) {
+        try {
+            CtClass[] paramTypes = pool.get(Arrays.stream(m.getParameterTypes())
+                    .map(Class::getName)
+                    .collect(Collectors.toList())
+                    .toArray(new String[0]));
+
+            CtClass[] exceptionTypes = pool.get(Arrays.stream(m.getExceptionTypes())
+                    .map(Class::getName)
+                    .collect(Collectors.toList())
+                    .toArray(new String[0]));
+
+            String body = "throw new IllegalArgumentException(\"Only setters and getters are supported. Use default methods in Views if needed\");";
+
+            if (m.getName().startsWith("set")) {
+                if (BaseEntityView.class.isAssignableFrom(m.getParameterTypes()[0])) {
+                    body = "getOrigin()." + m.getName() + "($1.getOrigin());";
+                } else {
+                    body = "getOrigin()." + m.getName() + "($1);";
+                }
+            } else if (m.getName().startsWith("get")) {
+                if (BaseEntityView.class.isAssignableFrom(m.getReturnType())) {
+                    body = "return " + EntityViewWrapper.class.getName() + ".wrap(getOrigin()." + m.getName() + "(), " + m.getReturnType().getName() + ".class);";
+                } else {
+                    body = "return getOrigin()." + m.getName() + "();";
+                }
+            }
+
+            CtMethod newMethod = CtNewMethod.make(m.getModifiers(),
+                    pool.get(m.getReturnType().getName()),
+                    m.getName(),
+                    paramTypes,
+                    exceptionTypes,
+                    "{" + body + "}",
+                    wrapper);
+
+            wrapper.addMethod(newMethod);
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot add method " + m.getName() + " to a generated wrapper", e);
+        }
     }
 
 
@@ -153,33 +201,6 @@ public class EntityViewWrapper {
         return returnType;
     }
 
-
-    /**
-     * Checks if a method is setter method that has only one parameter of a type BaseEntityView.
-     *
-     * @param method Method to be verified.
-     * @param args   Method's args.
-     * @return True if is's a proper setter.
-     */
-    private static boolean isSetterWithView(Method method, Object[] args) {
-        return method.getReturnType().equals(Void.TYPE)
-                && method.getName().startsWith("set")
-                && (args.length == 1)
-                && (BaseEntityView.class.isAssignableFrom((Class<?>) args[0]));
-    }
-
-    /**
-     * Checks if a method's invocation result can be wrapped into entity view.
-     *
-     * @param viewMethod   Method to check.
-     * @param entityMethod Effective entity method to be invoked.
-     * @return True if invocation result can be wrapped.
-     */
-    static boolean isWrappable(Method viewMethod, Method entityMethod) {
-        return Entity.class.isAssignableFrom(entityMethod.getReturnType())
-                && BaseEntityView.class.isAssignableFrom(viewMethod.getReturnType());
-    }
-
     public static abstract class BaseEntityViewImpl<E extends Entity<K>, V extends BaseEntityView<E, K>, K> implements BaseEntityView<E, K> {
 
         protected final E entity;
@@ -206,11 +227,6 @@ public class EntityViewWrapper {
 
         public void setView(View view) {
             this.view = view;
-        }
-
-        @Override
-        public E getOrigin() {
-            return entity;
         }
 
         @Override
