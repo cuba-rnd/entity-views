@@ -230,6 +230,11 @@ public class EntityViewWrapper {
         }
 
         @Override
+        public E getOrigin() {
+            return entity;
+        }
+
+        @Override
         public Class<V> getInterfaceClass() {
             return viewInterface;
         }
