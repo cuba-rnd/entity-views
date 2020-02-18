@@ -57,30 +57,36 @@ public class EntityViewWrapper {
         log.trace("Effective view: {}", effectiveView);
 
         try {
-            String wrapperName = effectiveView.getName() + "WrapperImpl";
-            Class<?> aClass = null;
-            try {
-                aClass = Class.forName(wrapperName);
-            } catch (ClassNotFoundException e) {
-                log.debug("Wrapper implementation class for view " + effectiveView.getName() + " is not created. Trying to create it.");
-            }
-            if (aClass == null) {
-                aClass = createWrapperImplementation(entity, effectiveView, wrapperName);
-            }
+            Class<?> aClass = getWrapperClass(effectiveView);
             Constructor<?> constructor = aClass.getConstructors()[0];
-            V wrappedEntity = (V) constructor.newInstance(entity, effectiveView);
-            log.info(String.valueOf(wrappedEntity.getId()));
-            return wrappedEntity;
+            return (V) constructor.newInstance(entity, effectiveView);
         } catch (Exception e) {
             throw new RuntimeException("Cannot wrap entity " + entity + "into View " + effectiveView.getName(), e);
         }
     }
 
-    private static <E extends Entity<K>, V extends BaseEntityView<E, K>, K> Class<?> createWrapperImplementation(E entity, Class<V> viewInterface, String wrapperName) throws NotFoundException, CannotCompileException, IOException {
-        Class<?> aClass;
+    public static Class<?> getWrapperClass(Class<? extends BaseEntityView> effectiveView) throws NotFoundException, CannotCompileException, IOException {
+        String wrapperName = createWrapperClassName(effectiveView);
+        Class<?> aClass = null;
+        try {
+            aClass = Class.forName(wrapperName);
+        } catch (ClassNotFoundException e) {
+            log.debug("Wrapper implementation class for view " + effectiveView.getName() + " is not created. Trying to create it.");
+        }
+        if (aClass == null) {
+            aClass = createWrapperImplementation(effectiveView, wrapperName);
+        }
+        return aClass;
+    }
+
+    private static String createWrapperClassName(Class<?> effectiveView) {
+        return String.format("%sWrapperImpl", effectiveView.getName());
+    }
+
+    private static <E extends Entity<K>, V extends BaseEntityView<E, K>, K> Class<?> createWrapperImplementation(Class<V> viewInterface, String wrapperName) throws NotFoundException, CannotCompileException, IOException {
         ClassPool pool = ClassPool.getDefault();
-        CtClass baseClass = pool.get("com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper$BaseEntityViewImpl");
-        CtClass wrappingEntityClass = pool.get(entity.getClass().getName());
+        CtClass baseClass = pool.get(BaseEntityViewImpl.class.getName());
+        CtClass wrappingEntityClass = pool.get(getViewEntityClassName(viewInterface));
         CtClass viewIf = pool.get(viewInterface.getName());
 
         CtClass wrapperClass = pool.makeClass(wrapperName, baseClass);
@@ -104,7 +110,7 @@ public class EntityViewWrapper {
             }
         });
         wrapperClass.writeFile();
-        aClass = wrapperClass.toClass();
+        Class<?> aClass = wrapperClass.toClass();
         wrapperClass.debugWriteFile("c:/temp");
         return aClass;
     }
@@ -126,8 +132,10 @@ public class EntityViewWrapper {
         String body = "throw new IllegalArgumentException(\"Only setters and getters are supported. Use default methods in Views if needed\");";
 
         if (m.getName().startsWith("set")) {
-            if (BaseEntityView.class.isAssignableFrom(m.getParameterTypes()[0])) {
-                body = "getOrigin()." + m.getName() + "($1.getOrigin());";
+            Class<?> parameterType = m.getParameterTypes()[0];
+            if (BaseEntityView.class.isAssignableFrom(parameterType)) {
+                String paramTypeName = getViewEntityClassName((Class<? extends BaseEntityView>)parameterType);
+                body = "getOrigin()." + m.getName() + "(("+paramTypeName+")($1.getOrigin()));";
             } else {
                 body = "getOrigin()." + m.getName() + "($1);";
             }
@@ -146,6 +154,15 @@ public class EntityViewWrapper {
                 exceptionTypes,
                 "{" + body + "}",
                 wrapper);
+    }
+
+    private static String getViewEntityClassName(Class<? extends BaseEntityView> effectiveView)  {
+        Type[] genericInterfaces = effectiveView.getGenericInterfaces();
+
+        while ((genericInterfaces instanceof Class<?>[])) {
+            genericInterfaces = ((Class<?>[])genericInterfaces)[0].getGenericInterfaces();
+        }
+        return ((ParameterizedType) (genericInterfaces[0])).getActualTypeArguments()[0].getTypeName();
     }
 
 
@@ -214,7 +231,7 @@ public class EntityViewWrapper {
         }
 
         @Override
-        public <V extends BaseEntityView<E, K>> V reload(Class<V> targetView) {
+        public <U extends BaseEntityView<E, K>> U reload(Class<U> targetView) {
             return null;
         }
 
