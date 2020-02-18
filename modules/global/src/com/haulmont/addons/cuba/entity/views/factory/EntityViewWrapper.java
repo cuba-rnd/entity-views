@@ -140,7 +140,10 @@ public class EntityViewWrapper {
                 body = "getOrigin()." + m.getName() + "($1);";
             }
         } else if (m.getName().startsWith("get")) {
-            if (BaseEntityView.class.isAssignableFrom(m.getReturnType())) {
+            if (Collection.class.isAssignableFrom(m.getReturnType())) {
+                Class<?> collectionGenericType = getReturnViewType(m);
+                body = "return new "+WrappingList.class.getName()+"(getOrigin()." + m.getName() + "(), " + collectionGenericType.getName() + ".class);";
+            } else if (BaseEntityView.class.isAssignableFrom(m.getReturnType())) {
                 body = "return " + EntityViewWrapper.class.getName() + ".wrap(getOrigin()." + m.getName() + "(), " + m.getReturnType().getName() + ".class);";
             } else {
                 body = "return getOrigin()." + m.getName() + "();";
