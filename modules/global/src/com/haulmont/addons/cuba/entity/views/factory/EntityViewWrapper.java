@@ -7,6 +7,8 @@ import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.chile.core.model.MetaClass;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.DataManager;
+import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.View;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -155,7 +157,7 @@ public class EntityViewWrapper {
                 m.getName(),
                 paramTypes,
                 exceptionTypes,
-                "{" + body + "}",
+                "{doReload();\n" + body + "}",
                 wrapper);
     }
 
@@ -197,7 +199,7 @@ public class EntityViewWrapper {
 
     public static abstract class BaseEntityViewImpl<E extends Entity<K>, V extends BaseEntityView<E, K>, K> implements BaseEntityView<E, K> {
 
-        protected final E entity;
+        protected E entity;
         private boolean needReload;
         private final Class<V> viewInterface;
         private View view;
@@ -205,22 +207,23 @@ public class EntityViewWrapper {
         public BaseEntityViewImpl(E entity, Class<V> viewInterface) {
             this.entity = entity;
             this.viewInterface = viewInterface;
-        }
-
-        public boolean isNeedReload() {
-            return needReload;
-        }
-
-        public void setNeedReload(boolean needReload) {
-            this.needReload = needReload;
+            view = AppBeans.get(ViewsConfiguration.class).getViewByInterface(viewInterface);
+            this.needReload = !AppBeans.get(EntityStates.class).isLoadedWithView(entity, view);
         }
 
         public View getView() {
             return view;
         }
 
-        public void setView(View view) {
-            this.view = view;
+        protected void doReload() {
+            if (needReload) {
+                log.info("Reloading entity {} using view {}", entity, view);
+                DataManager dm = AppBeans.get(DataManager.class);
+                E reloaded = dm.reload(entity, view);
+                entity = (reloaded instanceof BaseEntityView) ? (E)((BaseEntityView) reloaded).getOrigin() : reloaded;
+                log.info("Entity: {} class is: {}", entity, entity.getClass());
+                needReload = false;
+            }
         }
 
         @Override
@@ -235,7 +238,11 @@ public class EntityViewWrapper {
 
         @Override
         public <U extends BaseEntityView<E, K>> U reload(Class<U> targetView) {
-            return null;
+            if (viewInterface.isAssignableFrom(targetView)) {
+                //noinspection unchecked
+                return (U) this;
+            }
+            return EntityViewWrapper.wrap(entity, targetView);
         }
 
         @Override
