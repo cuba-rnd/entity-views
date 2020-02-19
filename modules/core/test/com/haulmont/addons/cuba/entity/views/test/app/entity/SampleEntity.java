@@ -1,6 +1,7 @@
 package com.haulmont.addons.cuba.entity.views.test.app.entity;
 
 import com.haulmont.chile.core.annotations.Composition;
+import com.haulmont.chile.core.annotations.MetaProperty;
 import com.haulmont.chile.core.annotations.NamePattern;
 import com.haulmont.cuba.core.entity.StandardEntity;
 import com.haulmont.cuba.core.entity.annotation.OnDelete;
@@ -16,6 +17,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import java.util.Locale;
 
 @NamePattern("%s|name")
 @Table(name = "PLAYGROUND_SAMPLE_ENTITY")
@@ -51,7 +53,6 @@ public class SampleEntity extends StandardEntity {
         return compParams;
     }
 
-
     public void setParams(List<EntityParameter> params) {
         this.params = params;
     }
@@ -59,7 +60,6 @@ public class SampleEntity extends StandardEntity {
     public List<EntityParameter> getParams() {
         return params;
     }
-
 
     public void setParent(SampleEntity parent) {
         this.parent = parent;
@@ -69,7 +69,6 @@ public class SampleEntity extends StandardEntity {
         return parent;
     }
 
-
     public void setUser(User user) {
         this.user = user;
     }
@@ -78,13 +77,17 @@ public class SampleEntity extends StandardEntity {
         return user;
     }
 
-
     public void setName(String name) {
         this.name = name;
     }
 
     public String getName() {
         return name;
+    }
+
+    @MetaProperty
+    public String getNameUppercase() {
+        return name.toUpperCase(Locale.getDefault());
     }
 
 }

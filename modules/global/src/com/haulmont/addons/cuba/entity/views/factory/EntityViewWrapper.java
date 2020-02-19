@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
@@ -68,6 +69,9 @@ public class EntityViewWrapper {
     }
 
     public static Class<?> getWrapperClass(Class<? extends BaseEntityView> effectiveView) throws NotFoundException, CannotCompileException, IOException {
+        if (effectiveView == null || !BaseEntityView.class.isAssignableFrom(effectiveView)) {
+            throw new IllegalArgumentException(String.format("View interface must not be null and should implement %s", BaseEntityView.class.getName()));
+        }
         String wrapperName = createWrapperClassName(effectiveView);
         Class<?> aClass = null;
         try {
@@ -106,7 +110,7 @@ public class EntityViewWrapper {
 
         entityViewMethods.forEach(m -> {
             try {
-                wrapperClass.addMethod(createDelegateMethod(wrapperClass, m, pool));
+                wrapperClass.addMethod(createDelegateMethod(wrapperClass, m, pool, wrappingEntityClass));
             } catch (NotFoundException | CannotCompileException e) {
                 throw new IllegalArgumentException("Cannot add method " + m.getName() + " to wrapper class " + wrapperName, e);
             }
@@ -124,41 +128,59 @@ public class EntityViewWrapper {
                 .collect(Collectors.toList());
     }
 
-    private static CtMethod createDelegateMethod(CtClass wrapper, Method m, ClassPool pool) throws NotFoundException, CannotCompileException {
-        CtClass[] paramTypes = pool.get(Arrays.stream(m.getParameterTypes())
+    private static CtMethod createDelegateMethod(CtClass wrapper, Method m, ClassPool pool, CtClass wrappingEntityClass) throws NotFoundException, CannotCompileException {
+        Class<?>[] parameterTypes = m.getParameterTypes();
+
+        List<String> paramDelegatesList = IntStream.range(0, parameterTypes.length)
+                .mapToObj(i -> createParameterDelegateString(i + 1, parameterTypes[i]))
+                .collect(Collectors.toList());
+
+        String paramDelegatesInvoke = String.join(",", paramDelegatesList);
+
+        String methodDelegateInvocation = "instance."+m.getName()+"("+paramDelegatesInvoke+")";
+
+        Class<?> returnType = m.getReturnType();
+        String returnTypeName = returnType.getName();
+        String body = appendResultReturnCode(m, returnType, returnTypeName, methodDelegateInvocation);
+
+        CtClass[] paramTypes = pool.get(Arrays.stream(parameterTypes)
                 .map(Class::getName).toArray(String[]::new));
 
         CtClass[] exceptionTypes = pool.get(Arrays.stream(m.getExceptionTypes())
                 .map(Class::getName).toArray(String[]::new));
 
-        String body = "throw new IllegalArgumentException(\"Only setters and getters are supported. Use default methods in Views if needed\");";
-
-        if (m.getName().startsWith("set")) {
-            Class<?> parameterType = m.getParameterTypes()[0];
-            if (BaseEntityView.class.isAssignableFrom(parameterType)) {
-                String paramTypeName = getViewEntityClassName((Class<? extends BaseEntityView>)parameterType);
-                body = "getOrigin()." + m.getName() + "(("+paramTypeName+")($1.getOrigin()));";
-            } else {
-                body = "getOrigin()." + m.getName() + "($1);";
-            }
-        } else if (m.getName().startsWith("get")) {
-            if (Collection.class.isAssignableFrom(m.getReturnType())) {
-                Class<?> collectionGenericType = getReturnViewType(m);
-                body = "return new "+WrappingList.class.getName()+"(getOrigin()." + m.getName() + "(), " + collectionGenericType.getName() + ".class);";
-            } else if (BaseEntityView.class.isAssignableFrom(m.getReturnType())) {
-                body = "return " + EntityViewWrapper.class.getName() + ".wrap(getOrigin()." + m.getName() + "(), " + m.getReturnType().getName() + ".class);";
-            } else {
-                body = "return getOrigin()." + m.getName() + "();";
-            }
-        }
-
         return CtNewMethod.make(m.getModifiers(),
-                pool.get(m.getReturnType().getName()),
+                pool.get(returnTypeName),
                 m.getName(),
                 paramTypes,
                 exceptionTypes,
-                "{doReload();\n" + body + "}",
+                "{doReload();\n"
+                        + wrappingEntityClass.getName()+ " instance = getOrigin();"
+                        + body
+                        + "}",
                 wrapper);
+    }
+
+    private static String createParameterDelegateString(int parameterNum, Class<?> parameterType) {
+        if (BaseEntityView.class.isAssignableFrom(parameterType)) {
+            String paramTypeName = getViewEntityClassName((Class<? extends BaseEntityView>)parameterType);
+            return "("+paramTypeName+")($"+parameterNum+".getOrigin())";
+        } else {
+            return "$"+parameterNum;
+        }
+    }
+
+    private static String appendResultReturnCode(Method m, Class<?> returnType, String returnTypeName, String body) {
+        if (Collection.class.isAssignableFrom(returnType)) {
+            Class<?> collectionGenericType = getMethodReturnType(m);
+            return "\nreturn new "+ WrappingList.class.getName()+"("+body+", " + collectionGenericType.getName() + ".class);";
+        } else if (BaseEntityView.class.isAssignableFrom(returnType)) {
+            return "\nreturn " + EntityViewWrapper.class.getName() + ".wrap("+body+", " + returnTypeName + ".class);";
+        } else if (!returnType.equals(Void.TYPE)) {
+            return "\nreturn "+body+";";
+        } else {
+            return body+";";
+        }
     }
 
     private static String getViewEntityClassName(Class<? extends BaseEntityView> effectiveView)  {
@@ -178,7 +200,7 @@ public class EntityViewWrapper {
      * @param viewMethod method to be used in CUBA view.
      * @return type that will be used in CUBA view.
      */
-    public static Class<?> getReturnViewType(Method viewMethod) {
+    public static Class<?> getMethodReturnType(Method viewMethod) {
         Class<?> returnType = viewMethod.getReturnType();
         if (Collection.class.isAssignableFrom(returnType)) {
             Type genericReturnType = viewMethod.getGenericReturnType();
@@ -194,6 +216,7 @@ public class EntityViewWrapper {
                 }
             }
         }
+        log.trace("Method {} return type {}", viewMethod.getName(), returnType);
         return returnType;
     }
 

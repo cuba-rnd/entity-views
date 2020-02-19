@@ -93,10 +93,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testMasterDetailsComposition(){
-        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1")
-                .list().get(0);
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class).id(data1.getId()).one();
         List<ParameterNameOnly> params = sampleWithParameters.getParams();
         params.sort(Comparator.comparing(ParameterNameOnly::getName));
         assertEquals(2, params.size());
@@ -105,10 +102,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testEmptyDetails(){
-        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data2")
-                .list().get(0);
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class).id(data2.getId()).one();
         List<ParameterNameOnly> params = sampleWithParameters.getParams();
         assertEquals(0, params.size());
     }
@@ -116,10 +110,7 @@ public class DetailsViewsTest {
     @Test
     public void testAddChild() {
         SampleWithParameters parent = dataManager
-                .load(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1")
-                .list().get(0);
+                .load(SampleWithParameters.class).id(data1.getId()).one();
         assertEquals(2, parent.getParams().size());
 
         EntityParameter child = metadata.create(EntityParameter.class);
@@ -130,11 +121,7 @@ public class DetailsViewsTest {
 
         dataManager.commit(child);
 
-        parent = dataManager
-                .load(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1")
-                .list().get(0);
+        parent = dataManager.load(SampleWithParameters.class).id(data1.getId()).one();
         List<ParameterNameOnly> children = parent.getParams();
         children.sort(Comparator.comparing(ParameterNameOnly::getName));
         assertEquals(3, children.size());
@@ -143,10 +130,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testComposition(){
-        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data3")
-                .list().get(0);
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class).id(data3.getId()).one();
         List<ParameterNameOnly> params = sampleWithParameters.getCompParams();
         assertEquals(2, params.size());
         assertTrue(params.get(0).getName().equals("Param3") || params.get(1).getName().equals("Param3"));
@@ -154,10 +138,7 @@ public class DetailsViewsTest {
 
     @Test
     public void testDeleteComposition(){
-        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data3")
-                .list().get(0);
+        SampleWithParameters sampleWithParameters = dataManager.load(SampleWithParameters.class).id(data3.getId()).one();
         dataManager.remove(sampleWithParameters);
 
         List<SampleWithParameters> testList = dataManager.load(SampleWithParameters.class)

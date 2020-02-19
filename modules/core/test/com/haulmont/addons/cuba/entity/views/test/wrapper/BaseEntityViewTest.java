@@ -5,6 +5,7 @@ import com.haulmont.addons.cuba.entity.views.global.ViewsSupportEntityStates;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalView;
+import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleViewWithDelegate;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleWithParentView;
 import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleMinimalWithUserView;
 import com.haulmont.bali.db.QueryRunner;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -122,9 +124,7 @@ public class BaseEntityViewTest {
 
     @Test
     public void testEmbeddedView() {
-        SampleMinimalWithUserView swu = dataManager.load(SampleMinimalWithUserView.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1").list().get(0);
+        SampleMinimalWithUserView swu = dataManager.load(SampleMinimalWithUserView.class).id(data1.getId()).one();
 
         assertEquals(data1.getName(), swu.getName());
         assertEquals(data1.getUser().getName(), swu.getUser().getName());
@@ -136,25 +136,25 @@ public class BaseEntityViewTest {
     @Test
     public void testDefaultMethod() {
 
-        SampleMinimalView sampleMinimal = dataManager.load(SampleMinimalView.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data1")
-                .list()
-                .get(0);
+        SampleMinimalView sampleMinimal = dataManager.load(SampleMinimalView.class).id(data1.getId()).one();
 
         assertEquals(data1.getName(), sampleMinimal.getName());
         assertEquals(data1.getName().toLowerCase(), sampleMinimal.getNameLowercase());
     }
 
+    @Test
+    public void testDelegateMethod() {
+
+        SampleViewWithDelegate sampleMinimal = dataManager.load(SampleViewWithDelegate.class).id(data1.getId()).one();
+
+        assertEquals(data1.getName(), sampleMinimal.getName());
+        assertEquals(data1.getName().toUpperCase(Locale.getDefault()), sampleMinimal.getNameUppercase());
+    }
 
     @Test
     public void testDefaultMethodEmbedded() {
 
-        SampleWithParentView sampleMinimal = dataManager.load(SampleWithParentView.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data2")
-                .list()
-                .get(0);
+        SampleWithParentView sampleMinimal = dataManager.load(SampleWithParentView.class).id(data2.getId()).one();
 
         assertEquals(data2.getName(), sampleMinimal.getName());
         assertEquals(data2.getParent().getName().toLowerCase(), sampleMinimal.getParent().getNameLowercase());
@@ -163,11 +163,7 @@ public class BaseEntityViewTest {
     @Test
     public void testEntityViewIsEntity() {
 
-        SampleMinimalView sampleMinimalView = dataManager.load(SampleMinimalView.class)
-                .query("select e from playground$SampleEntity e where e.name = :name")
-                .parameter("name", "Data2")
-                .list()
-                .get(0);
+        SampleMinimalView sampleMinimalView = dataManager.load(SampleMinimalView.class).id(data2.getId()).one();
 
         assertEquals(data2.getId(), sampleMinimalView.getId());
         assertEquals(metadataTools.getInstanceName(data2), metadataTools.getInstanceName(sampleMinimalView));

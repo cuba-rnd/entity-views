@@ -195,8 +195,7 @@ public class ViewsConfigurationBean implements ViewsConfiguration {
                                 , viewInterfaceInfo.entityClass));
             }
 
-            Class<?> fieldViewInterface = EntityViewWrapper.getReturnViewType(viewMethod);
-            log.trace("Method {} return type {}", viewMethod.getName(), fieldViewInterface);
+            Class<?> fieldViewInterface = EntityViewWrapper.getMethodReturnType(viewMethod);
 
             log.trace("Checking if a method {} refers an entity with a certain view", viewMethod.getName());
             if (BaseEntityView.class.isAssignableFrom(fieldViewInterface)) {

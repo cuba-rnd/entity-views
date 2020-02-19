@@ -4,7 +4,6 @@ import com.haulmont.addons.cuba.entity.views.factory.EntityViewWrapper;
 import com.haulmont.addons.cuba.entity.views.scan.ViewsConfiguration;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.views.test.app.entity.SampleEntity;
-import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalView;
 import com.haulmont.addons.cuba.entity.views.test.app.views.sample.SampleMinimalViewReplace;
 import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleMinimalWithUserView;
 import com.haulmont.addons.cuba.entity.views.test.app.views.user.SampleWithUserView;
@@ -70,7 +69,7 @@ public class EntityWrapperTest {
     }
 
     @Test
-    public void testWrapNull() {
+    public void testWrapNullEntity() {
         SampleMinimalWithUserView.UserMinimalView userMinimal = EntityViewWrapper.wrap(null, SampleMinimalWithUserView.UserMinimalView.class);
         assertNull(userMinimal);
     }
