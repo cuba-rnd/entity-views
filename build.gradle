@@ -12,12 +12,13 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
+        //classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
+        classpath "com.haulmont.gradle:cuba-plugin:7.3-SNAPSHOT"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1+'
     }
 }
 
-def modulePrefix = 'entity-views'
+def modulePrefix = 'entity-projections'
 def artifactGlobalName = modulePrefix + "-global"
 def artifactCoreName = modulePrefix + "-core"
 def artifactWebName = modulePrefix + "-web"

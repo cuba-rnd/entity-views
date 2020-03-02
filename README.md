@@ -78,7 +78,7 @@ Add the component to the dependencies list (or specify it in project settings us
 ...
 dependencies {
     ...
-    appComponent("com.haulmont.addons.cuba.entity.views:entity-views-core:0.1.1")
+    appComponent("com.haulmont.addons.cuba.entity.projections:entity-views-core:0.1.1")
 }
 ```
  
