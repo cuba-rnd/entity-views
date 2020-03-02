@@ -124,8 +124,9 @@ public class ProjectionSupportDataManagerBean extends DataManagerBean {
         super.remove(entityToRemove);
     }
 
+
     @Override
-    public <T> T create(Class<T> entityClass) {
+    public <T extends Entity> T create(Class<T> entityClass) {
         if (BaseProjection.class.isAssignableFrom(entityClass)) {
             ProjectionsConfigurationBean.ProjectionInfo viewInterfaceDefinition
                     = projectionsConfiguration.getProjectionInfo((Class<BaseProjection>) entityClass);

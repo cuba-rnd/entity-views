@@ -1,5 +1,5 @@
 buildscript {
-    ext.cubaVersion = '7.1.4'
+    ext.cubaVersion = '7.2.0'
     repositories {
         mavenLocal()
         mavenCentral()
@@ -29,8 +29,8 @@ def webModule = project(artifactWebName)
 
 def servletApi = 'javax.servlet:javax.servlet-api:3.1.0'
 
-def artifactGroup = 'com.haulmont.addons.cuba.entity.views'
-def artifactVersion = '0.1.4'
+def artifactGroup = 'com.haulmont.addons.cuba.entity.projections'
+def artifactVersion = '0.1.5'
 def isArtifactSnapshot = true
 
 apply(plugin: 'cuba')
@@ -220,7 +220,7 @@ subprojects {
         // metadata
         pkg {
             repo = 'labs'           // your repository name
-            name = 'cuba-entity-views'  // package name - it will be created upon upload
+            name = 'cuba-entity-projections'  // package name - it will be created upon upload
             userOrg = 'cuba-platform'
             licenses = ["Apache-2.0"]
             websiteUrl = 'https://github.com/cuba-rnd/entity-views'

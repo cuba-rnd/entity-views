@@ -2,10 +2,10 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:views="http://www.cuba-platform.org/schema/data/views"
+       xmlns:projections="http://www.cuba-platform.org/schema/data/projections"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
-        http://www.cuba-platform.org/schema/data/views cuba-projections.xsd">
+        http://www.cuba-platform.org/schema/data/projections http://www.cuba-platform.org/schema/cuba-projections.xsd">
 
     <bean name="cuba_DataManager" class="com.haulmont.addons.cuba.entity.projections.ProjectionSupportDataManagerBean"/>
 
@@ -14,6 +14,6 @@
     <!-- Annotation-based beans -->
     <context:component-scan base-package="com.haulmont.addons.cuba.entity.projections"/>
 
-    <views:views base-packages="com.haulmont.addons.cuba.entity.projections.test.cyclic"/>
+    <projections:projections base-packages="com.haulmont.addons.cuba.entity.projections.test.cyclic"/>
 
 </beans>

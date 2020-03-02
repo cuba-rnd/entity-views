@@ -5,7 +5,7 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 /**
  * Registers parser for the custom tag.
  */
-public class ViewsNamespaceHandler extends NamespaceHandlerSupport {
+public class ProjectionsNamespaceHandler extends NamespaceHandlerSupport {
 
     public static final String PROJECTIONS = "projections";
 

@@ -17,7 +17,7 @@ public class CyclicViewTestContainer extends TestContainer {
                 "com.haulmont.cuba"
         ));
         appPropertiesFiles = Arrays.asList(
-                "com/haulmont/addons/cuba/entity/views/test/cyclic/test-app.properties",
+                "com/haulmont/addons/cuba/entity/projections/test/cyclic/test-app.properties",
                 "com/haulmont/cuba/testsupport/test-app.properties");
         initDbProperties();
     }

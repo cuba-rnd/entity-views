@@ -12,12 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Ignore
-public class CyclicViewsTest {
+public class CyclicProjectionsTest {
 
     @ClassRule
     public static final TestContainer cont = CyclicViewTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(CyclicViewsTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CyclicProjectionsTest.class);
 
     @Before
     public void setUp()  {
@@ -27,7 +27,7 @@ public class CyclicViewsTest {
     @Test(expected = ProjectionInitException.class)
     public void testCyclicDependencyFailure(){
         cont.getSpringAppContext().publishEvent(new AppContextStartedEvent(cont.getSpringAppContext()));
-        Assert.fail("The test should fail on Initialization due to a cyclic view presence");
+        Assert.fail("The test should fail on Initialization due to a cyclic projection presence");
     }
 
 }

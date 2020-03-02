@@ -1,1 +1,1 @@
-http\://www.cuba-platform.org/schema/data/projections=com.haulmont.addons.cuba.entity.projections.scan.ViewsNamespaceHandler
+http\://www.cuba-platform.org/schema/data/projections=com.haulmont.addons.cuba.entity.projections.scan.ProjectionsNamespaceHandler
