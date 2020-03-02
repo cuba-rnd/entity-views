@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 
 
 /**
- * List that wraps its elements - entities into entity views. Implemented for
+ * List that wraps its elements - entities into projections. Implemented for
  * one-to-many relationship implementation.
  *
  * @param <E> entity type.
- * @param <V> entity view type.
+ * @param <V> projection type.
  */
 public class WrappingList<E extends Entity<K>, V extends BaseProjection<E, K>, K> implements List<V> {
 

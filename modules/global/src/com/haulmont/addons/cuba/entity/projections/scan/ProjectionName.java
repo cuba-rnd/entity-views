@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation is for backward compatibility - allows to get CUBA view instance defined by Entity View by its name.
+ * Annotation is for backward compatibility - allows to get CUBA view instance defined by projection by its name.
  */
 @Documented
 @Target(ElementType.TYPE)

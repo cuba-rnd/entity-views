@@ -10,7 +10,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
 /**
- * Scans classpath and looks for entity view candidates. Candidates should implement {@link BaseProjection}
+ * Scans classpath and looks for projection candidates. Candidates should implement {@link BaseProjection}
  * and should not be annotated with {@link AbstractProjection}.
  * @see ClassPathScanningCandidateComponentProvider
  */

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -27,7 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * It is a custom tag config parser and an entity view registrar. It is called by Spring on every {@code <projections/>}
+ * It is a custom tag config parser and a projection registrar. It is called by Spring on every {@code <projections/>}
  * tag entry found in spring.xml. This class reads package names from the tag, runs a scanner to find entity projections and
  * then creates {@link ProjectionsConfiguration} bean with all entity projection definitions and puts it to Spring context.
  * @see BeanDefinitionParser
@@ -49,12 +50,17 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
             Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions = scanForProjections(parserContext, packages);
             if (registry.containsBeanDefinition(ProjectionsConfigurationBean.NAME)){
                 log.debug("Adding new projections into existing configuration storage: {}", projectionDefinitions);
-                Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> initMap =
-                        (Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo>) registry
-                                .getBeanDefinition(ProjectionsConfigurationBean.NAME)
-                                .getConstructorArgumentValues().getArgumentValue(0, Map.class).getValue();
+                ConstructorArgumentValues constructorArgumentValues = registry
+                        .getBeanDefinition(ProjectionsConfigurationBean.NAME)
+                        .getConstructorArgumentValues();
 
-                initMap.putAll(projectionDefinitions);
+                Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> initMap =
+                        (Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo>) constructorArgumentValues.getArgumentValue(0, Map.class).getValue();
+                if (initMap != null) {
+                    initMap.putAll(projectionDefinitions);
+                } else {
+                    constructorArgumentValues.addIndexedArgumentValue(0, initMap);
+                }
             } else {
                 log.debug("Creating new projections configuration storage: {}", projectionDefinitions);
                 BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ProjectionsConfigurationBean.class)
@@ -63,9 +69,9 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
                 registry.registerBeanDefinition(ProjectionsConfigurationBean.NAME, projectionsConfigurationBean);
             }
         } catch (Exception e) {
-            throw new BeanInitializationException("Cannot create view interface definitions", e);
+            throw new BeanInitializationException("Cannot create projection interface definitions", e);
         }
-        log.trace("Scanning views in packages {} successfully completed", Arrays.toString(packages));
+        log.trace("Scanning projections in packages {} successfully completed", Arrays.toString(packages));
         return null;
     }
 

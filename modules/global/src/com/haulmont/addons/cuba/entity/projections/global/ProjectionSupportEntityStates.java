@@ -44,7 +44,7 @@ public class ProjectionSupportEntityStates extends EntityStates {
      *
      * @param projection - entity wrapped with a projection interface.
      * @param <E> - entity class.
-     * @param <V> - entity view interface class.
+     * @param <V> - projection interface class.
      * @param <K> - entity ID key class.
      * @return - true if the instance is a new persistent entity, or if it is actually in Managed state
      *           but newly-persisted in this transaction <br>
@@ -63,7 +63,7 @@ public class ProjectionSupportEntityStates extends EntityStates {
      *
      * @param projection - entity wrapped with a projection interface.
      * @param <E> - entity class.
-     * @param <V> - entity view interface class.
+     * @param <V> - projection interface class.
      * @param <K> - entity ID key class.
      * @return - true if the instance is detached,<br>
      *     - false if it is New or Managed, or if it is not a persistent entity.
@@ -77,7 +77,7 @@ public class ProjectionSupportEntityStates extends EntityStates {
      * @see EntityStates#isManaged(Object)
      * @param projection - entity wrapped with a projection interface.
      * @param <E> - entity class.
-     * @param <V> - entity view interface class.
+     * @param <V> - projection interface class.
      * @param <K> - entity ID key class.
      * @return - true if the instance is managed,<br>
      *         - false if it is New (and not yet persisted) or Detached, or if it is not a persistent entity.

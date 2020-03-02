@@ -31,8 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Registry that builds and stores entity views and corresponding CUBA views. This class also builds proper substitution
- * for entity views for extended entities and prevents cyclic references between entity views. <br>
+ * Registry that builds and stores projections and corresponding CUBA views. This class also builds proper substitution
+ * for projections for extended entities and prevents cyclic references between projections. <br>
  * The class is in application context despite on fact that it is not marked as a Spring component.
  */
 
@@ -51,7 +51,7 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
     @EventListener(AppContextInitializedEvent.class)
     @Order
     public void onAppContextInitializedEvent()  {
-        buildViewSubstitutionChain();
+        buildProjectionSubstitutionChain();
         log.debug("Creating CUBA views for projections");
         for (Class<? extends BaseProjection> interfaceClass : projectionDefinitions.keySet()) {
             log.debug("Creating view for {}", interfaceClass);
@@ -73,10 +73,10 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
     }
 
     /**
-     * Returns effective entity view class based on entity view substitution chain.
+     * Returns effective projection class based on projection substitution chain.
      *
-     * @param projectionInterface Initial view interface type that we want to return in our code.
-     * @return Effective entity view class.
+     * @param projectionInterface Initial projection interface type that we want to return in our code.
+     * @return Effective projection class.
      */
     @Override
     public Class<? extends BaseProjection> getEffectiveProjection(Class<? extends BaseProjection> projectionInterface) {
@@ -97,9 +97,9 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
 
 
     /**
-     * Returns CUBA view definition based on Entity View class.
+     * Returns CUBA view definition based on projection class.
      *
-     * @param projectionInterface Entity view class.
+     * @param projectionInterface Projection class.
      * @return CUBA view.
      */
     @Override
@@ -117,18 +117,18 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
     }
 
     /**
-     * Creates entity views substitution chain by going through existing reverse substitution chain that was created
-     * during scanning. This is not a final substitution - getEffectiveView() returns actual substitution class.
+     * Creates projections substitution chain by going through existing reverse substitution chain that was created
+     * during scanning. This is not a final substitution - ProjectionsConfigurationBean#getEffectiveProjection() returns actual substitution class.
      */
-    private void buildViewSubstitutionChain() {
+    private void buildProjectionSubstitutionChain() {
         //TODO Can be replaced with lambda.
-        log.trace("Building view interface substitution chain");
+        log.trace("Building projection substitution chain");
         for (ProjectionInfo replacing : projectionDefinitions.values()) {
             if (replacing.getReplacedProjection() != null) {
                 ProjectionInfo toBeReplaced = projectionDefinitions.get(replacing.getReplacedProjection());
                 if (toBeReplaced.getEntityClass().isAssignableFrom(replacing.getEntityClass())) {
                     toBeReplaced.setReplacedBy(replacing.projectionInterface);
-                    log.trace("Interface {} will be replaced by {}", toBeReplaced.projectionInterface, replacing.projectionInterface);
+                    log.trace("Projection {} will be replaced by {}", toBeReplaced.projectionInterface, replacing.projectionInterface);
                 } else {
                     throw new ProjectionInitException(String.format("Error building substitution chain:" +
                             " %s cannot be replaced by %s: " +
@@ -151,11 +151,11 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
     }
 
     /**
-     * Recursively creates CUBA view definition based on entity view interface contract taking into account views
+     * Recursively creates CUBA view definition based on projection interface contract taking into account projection
      * substitution.
      *
-     * @param projectionInterface Entity views interface class.
-     * @param visited       Set of processed entity view classes. We need it to prevent cyclic references.
+     * @param projectionInterface Projection interface class.
+     * @param visited       Set of processed projection classes. We need it to prevent cyclic references.
      * @return CUBA view definition.
      * @throws ProjectionInitException Throws exception in case of a cyclic reference or bad parent view reference.
      */
@@ -187,7 +187,7 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
         log.trace("View for: {} is created: {}, adding properties", effectiveProjection.getName(), result.getName());
         projectionMethods.forEach(method -> {
             //Check projection methods to have delegatable method in entity
-            // (if returns another view interface check that the entity has a reference to another entity)
+            // (if returns another projection check that the entity has a reference to another entity)
             if (MethodUtils.getAccessibleMethod(projectionInfo.entityClass, method.getName(), method.getParameterTypes()) == null) {
                 throw new ProjectionInitException(
                         String.format("Method %s is not found in corresponding entity class %s"
@@ -195,18 +195,18 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
                                 , projectionInfo.entityClass));
             }
 
-            Class<?> fieldViewInterface = EntityProjectionWrapper.getMethodReturnType(method);
+            Class<?> fieldProjection = EntityProjectionWrapper.getMethodReturnType(method);
 
             log.trace("Checking if a method {} refers an entity with a certain view", method.getName());
-            if (BaseProjection.class.isAssignableFrom(fieldViewInterface)) {
+            if (BaseProjection.class.isAssignableFrom(fieldProjection)) {
 
-                ProjectionInfo refFieldInterfaceInfo = projectionDefinitions.get(fieldViewInterface);
+                ProjectionInfo refFieldInterfaceInfo = projectionDefinitions.get(fieldProjection);
 
                 if (refFieldInterfaceInfo == null)
                     throw new ProjectionInitException(
                             String.format("Projection %s references %s projection which was not initially registered in ProjectionsConfigurationBean#scan"
                                     , effectiveProjection.getName()
-                                    , fieldViewInterface.getName()));
+                                    , fieldProjection.getName()));
 
                 Set<String> parents = ImmutableSet.<String>builder().addAll(visited).add(effectiveProjection.getName()).build();
                 View refFieldView = composeCubaView(refFieldInterfaceInfo.getProjectionInterface(), parents);
@@ -312,9 +312,12 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
 
         @Override
         public String toString() {
-            return "ProjectionInfo{" +
-                    "projectionInterface=" + projectionInterface.getName() +
-                    ", entityClass=" + entityClass.getName() +
+            return "ProjectionInfo {" +
+                    "projectionInterface=" + projectionInterface +
+                    ", entityClass=" + entityClass +
+                    ", view=" + view +
+                    ", replacedProjection=" + replacedProjection +
+                    ", replacedBy=" + replacedBy +
                     '}';
         }
     }

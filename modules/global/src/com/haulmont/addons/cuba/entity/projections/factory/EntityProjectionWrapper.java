@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Class that "wraps" entity into Entity view by creating a proxy class that implements entity view interface
+ * Class that "wraps" entity into projection by creating a proxy class that implements projection interface
  * contract. Please note that class uses application context despite on the fact that all methods are static.
  */
 public class EntityProjectionWrapper {
@@ -39,14 +39,14 @@ public class EntityProjectionWrapper {
     private static final Logger log = LoggerFactory.getLogger(EntityProjectionWrapper.class);
 
     /**
-     * Wraps entity instance into entity view interface.
+     * Wraps entity instance into projection.
      *
      * @param entity        Entity instance to be wrapped.
-     * @param projectionInterface Entity View Interface class.
+     * @param projectionInterface Projection class.
      * @param <E>           Entity Class
-     * @param <V>           Effective entity view interface class.
+     * @param <V>           Effective projection interface class.
      * @param <K>           Entity ID key class.
-     * @return Proxy that implements entity view interface of class <code>V</code>
+     * @return Proxy that implements projection interface of class <code>V</code>
      */
     @SuppressWarnings("unchecked")
     public static <E extends Entity<K>, V extends BaseProjection<E, K>, K> V wrap(E entity, Class<V> projectionInterface) {

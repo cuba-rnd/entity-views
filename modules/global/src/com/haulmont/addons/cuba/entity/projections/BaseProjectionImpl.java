@@ -13,6 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+/**
+ * Abstract implementation for the wrapper. It is a base class that will be used for class generation.
+ * @param <E>
+ * @param <V>
+ * @param <K>
+ */
 public abstract class BaseProjectionImpl<E extends Entity<K>, V extends BaseProjection<E, K>, K> implements BaseProjection<E, K> {
 
     protected final Logger log = LoggerFactory.getLogger(BaseProjectionImpl.class);
@@ -33,13 +39,15 @@ public abstract class BaseProjectionImpl<E extends Entity<K>, V extends BaseProj
         return view;
     }
 
+    /**
+     * Reloads entity if needed. This method is called before any property access.
+     */
     protected void doReload() {
         if (needReload) {
             log.info("Reloading entity {} using view {}", entity, view);
             DataManager dm = AppBeans.get(DataManager.class);
             E reloaded = dm.reload(entity, view);
             entity = (reloaded instanceof BaseProjection) ? (E)((BaseProjection) reloaded).getOrigin() : reloaded;
-            log.info("Entity: {} class is: {}", entity, entity.getClass());
             needReload = false;
         }
     }
@@ -55,12 +63,12 @@ public abstract class BaseProjectionImpl<E extends Entity<K>, V extends BaseProj
     }
 
     @Override
-    public <U extends BaseProjection<E, K>> U reload(Class<U> targetView) {
-        if (projectionInterface.isAssignableFrom(targetView)) {
+    public <U extends BaseProjection<E, K>> U reload(Class<U> targetProjection) {
+        if (projectionInterface.isAssignableFrom(targetProjection)) {
             //noinspection unchecked
             return (U) this;
         }
-        return EntityProjectionWrapper.wrap(entity, targetView);
+        return EntityProjectionWrapper.wrap(entity, targetProjection);
     }
 
     @Override
