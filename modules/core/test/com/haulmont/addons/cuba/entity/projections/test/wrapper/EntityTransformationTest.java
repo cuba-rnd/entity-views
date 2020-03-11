@@ -31,7 +31,7 @@ import static org.junit.Assert.assertSame;
 public class EntityTransformationTest {
 
     @ClassRule
-    public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
+    public static final AppTestContainer.Common cont = AppTestContainer.Common.INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(BaseProjectionTest.class);
 

@@ -9,7 +9,6 @@ import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.core.sys.events.AppContextInitializedEvent;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -186,14 +185,6 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
         projectionInfo.setView(result);
         log.trace("View for: {} is created: {}, adding properties", effectiveProjection.getName(), result.getName());
         projectionMethods.forEach(method -> {
-            //Check projection methods to have delegatable method in entity
-            // (if returns another projection check that the entity has a reference to another entity)
-            if (MethodUtils.getAccessibleMethod(projectionInfo.entityClass, method.getName(), method.getParameterTypes()) == null) {
-                throw new ProjectionInitException(
-                        String.format("Method %s is not found in corresponding entity class %s"
-                                , method
-                                , projectionInfo.entityClass));
-            }
 
             Class<?> fieldProjection = EntityProjectionWrapper.getMethodReturnType(method);
 

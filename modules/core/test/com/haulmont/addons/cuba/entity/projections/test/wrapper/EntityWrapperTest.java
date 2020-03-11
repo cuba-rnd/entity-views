@@ -26,14 +26,13 @@ import static org.junit.Assert.assertNull;
 public class EntityWrapperTest {
 
     @ClassRule
-    public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
+    public static final AppTestContainer.Common cont = AppTestContainer.Common.INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(EntityWrapperTest.class);
 
     private Persistence persistence;
     private DataManager dataManager;
     private SampleEntity data1, data2;
-    private User user;
     private ProjectionsConfiguration viewsConfig;
 
     @Before
@@ -45,7 +44,7 @@ public class EntityWrapperTest {
         dataManager = AppBeans.get(DataManager.class);
         viewsConfig = AppBeans.get(ProjectionsConfiguration.class);
 
-        user = dataManager.load(ExtendedUser.class).one();
+        User user = dataManager.load(ExtendedUser.class).one();
 
         data1 = dataManager.create(SampleEntity.class);
         data1.setName("Data1");

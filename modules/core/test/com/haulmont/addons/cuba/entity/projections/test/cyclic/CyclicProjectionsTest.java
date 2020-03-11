@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 public class CyclicProjectionsTest {
 
     @ClassRule
-    public static final TestContainer cont = CyclicViewTestContainer.Common.INSTANCE;
+    public static final TestContainer.Common cont = CyclicViewTestContainer.Common.INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(CyclicProjectionsTest.class);
 

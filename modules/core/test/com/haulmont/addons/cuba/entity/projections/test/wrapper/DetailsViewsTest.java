@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 public class DetailsViewsTest {
 
     @ClassRule
-    public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
+    public static final AppTestContainer.Common cont = AppTestContainer.Common.INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(DetailsViewsTest.class);
 

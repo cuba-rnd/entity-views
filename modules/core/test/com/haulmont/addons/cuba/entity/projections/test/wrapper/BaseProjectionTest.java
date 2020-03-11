@@ -1,7 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.test.wrapper;
 
 import com.haulmont.addons.cuba.entity.projections.factory.EntityProjectionWrapper;
-import com.haulmont.addons.cuba.entity.projections.global.ProjectionSupportEntityStates;
 import com.haulmont.addons.cuba.entity.projections.test.app.entity.ExtendedUser;
 import com.haulmont.addons.cuba.entity.projections.test.app.entity.SampleEntity;
 import com.haulmont.addons.cuba.entity.projections.test.app.views.sample.SampleMinimalView;
@@ -13,6 +12,7 @@ import com.haulmont.cuba.core.Persistence;
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.DataManager;
+import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.MetadataTools;
 import com.haulmont.cuba.core.sys.events.AppContextStartedEvent;
@@ -49,7 +49,7 @@ public class BaseProjectionTest {
 
     private SampleEntity data1, data2;
     private User user;
-    private ProjectionSupportEntityStates entityStates;
+    private EntityStates entityStates;
 
 
     @Before
@@ -62,7 +62,7 @@ public class BaseProjectionTest {
         persistence = cont.persistence();
         metadataTools = AppBeans.get(MetadataTools.class);
         dataManager = AppBeans.get(DataManager.class);
-        entityStates = AppBeans.get(ProjectionSupportEntityStates.class);
+        entityStates = AppBeans.get(EntityStates.class);
 
         user = dataManager.load(ExtendedUser.class).one();
 

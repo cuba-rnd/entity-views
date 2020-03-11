@@ -333,6 +333,12 @@ implement entity extension mechanism properly.
 Projection Interfaces are ready for use. They will be used to build CUBA views, so this concept do not break existing 
 codebase and you can use old XML-defined views as well as Projections.  
 
+### Running Tests
+To run tests you need to run HSQLDB first and then execute tests:
+```
+gradlew clean startDb createDb test stopDb
+```
+
 ## Conclusion
 Projection Interfaces is a new feature of the platform which is backward-compatible with existing programming model, but adds strong
 typing to entity manipulation processes and prevents developers from accessing unfetched attributes.
