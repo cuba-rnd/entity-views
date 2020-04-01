@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.global;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.EntityStates;
 
@@ -13,8 +13,8 @@ public class ProjectionSupportEntityStates extends EntityStates {
 
     @Override
     public boolean isNew(Object entity) {
-        if (entity instanceof BaseProjection) {
-            return super.isNew(((BaseProjection) entity).getOrigin());
+        if (entity instanceof Projection) {
+            return super.isNew(((Projection) entity).getOrigin());
         } else {
             return super.isNew(entity);
         }
@@ -22,8 +22,8 @@ public class ProjectionSupportEntityStates extends EntityStates {
 
     @Override
     public boolean isManaged(Object entity) {
-        if (entity instanceof BaseProjection) {
-            return super.isManaged(((BaseProjection) entity).getOrigin());
+        if (entity instanceof Projection) {
+            return super.isManaged(((Projection) entity).getOrigin());
         } else {
             return super.isManaged(entity);
         }
@@ -31,8 +31,8 @@ public class ProjectionSupportEntityStates extends EntityStates {
 
     @Override
     public boolean isDetached(Object entity) {
-        if (entity instanceof BaseProjection) {
-            return super.isDetached(((BaseProjection) entity).getOrigin());
+        if (entity instanceof Projection) {
+            return super.isDetached(((Projection) entity).getOrigin());
         } else {
             return super.isDetached(entity);
         }
@@ -51,7 +51,7 @@ public class ProjectionSupportEntityStates extends EntityStates {
      *         - true if the instance is a new non-persistent entity never returned from DataManager <br>
      *         - false otherwise.
      */
-    public <E extends Entity<K>, V extends BaseProjection<E, K>, K> boolean isNew(V projection) {
+    public <E extends Entity<K>, V extends Projection<E, K>, K> boolean isNew(V projection) {
         return isNew(projection.getOrigin());
     }
 
@@ -68,7 +68,7 @@ public class ProjectionSupportEntityStates extends EntityStates {
      * @return - true if the instance is detached,<br>
      *     - false if it is New or Managed, or if it is not a persistent entity.
      */
-    public <E extends Entity<K>, V extends BaseProjection<E, K>, K> boolean isDetached(V projection) {
+    public <E extends Entity<K>, V extends Projection<E, K>, K> boolean isDetached(V projection) {
         return isDetached(projection.getOrigin());
     }
 
@@ -82,7 +82,7 @@ public class ProjectionSupportEntityStates extends EntityStates {
      * @return - true if the instance is managed,<br>
      *         - false if it is New (and not yet persisted) or Detached, or if it is not a persistent entity.
      */
-    public <E extends Entity<K>, V extends BaseProjection<E, K>, K> boolean isManaged(V projection) {
+    public <E extends Entity<K>, V extends Projection<E, K>, K> boolean isManaged(V projection) {
         return isManaged(projection.getOrigin());
     }
 

@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.test.app.views.user;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.addons.cuba.entity.projections.scan.ProjectionName;
 import com.haulmont.addons.cuba.entity.projections.scan.ReplaceProjection;
 import com.haulmont.addons.cuba.entity.projections.test.app.views.sample.SampleMinimalViewReplace;
@@ -19,7 +19,7 @@ public interface SampleMinimalWithUserView extends SampleMinimalViewReplace {
     void setUser(UserMinimalView val);
 
     @ProjectionName(UserMinimalView.NAME)
-    interface UserMinimalView extends BaseProjection<User, UUID> {
+    interface UserMinimalView extends Projection<User, UUID> {
         String NAME = "user-minimal-view";
 
         String getLogin();

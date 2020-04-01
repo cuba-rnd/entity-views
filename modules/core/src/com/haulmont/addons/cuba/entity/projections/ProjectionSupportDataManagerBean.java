@@ -26,10 +26,10 @@ public class ProjectionSupportDataManagerBean extends DataManagerBean {
 
     @Override
     public <E extends Entity<K>, K> FluentLoader<E, K> load(Class<E> entityClass) {
-        boolean isProjection = BaseProjection.class.isAssignableFrom(entityClass);
+        boolean isProjection = Projection.class.isAssignableFrom(entityClass);
         if (isProjection) {
             ProjectionsConfigurationBean.ProjectionInfo projectionInfo =
-                    projectionsConfiguration.getProjectionInfo((Class<? extends BaseProjection>) entityClass);
+                    projectionsConfiguration.getProjectionInfo((Class<? extends Projection>) entityClass);
             entityClass = (Class<E>) projectionInfo.getEntityClass();
             View view = projectionInfo.getView();
             return new FluentLoader<>(entityClass, this).view(view);
@@ -55,10 +55,10 @@ public class ProjectionSupportDataManagerBean extends DataManagerBean {
     public <E extends Entity<K>, K> FluentLoader.ById<E, K> load(Id<E, K> entityId) {
         Class<E> entityClass = entityId.getEntityClass();
         K idValue = entityId.getValue();
-        boolean isProjection = BaseProjection.class.isAssignableFrom(entityClass);
+        boolean isProjection = Projection.class.isAssignableFrom(entityClass);
         if (isProjection) {
             ProjectionsConfigurationBean.ProjectionInfo viewInterfaceDefinition =
-                    projectionsConfiguration.getProjectionInfo((Class<? extends BaseProjection>) entityClass);
+                    projectionsConfiguration.getProjectionInfo((Class<? extends Projection>) entityClass);
             entityClass = (Class<E>) viewInterfaceDefinition.getEntityClass();
             View view = viewInterfaceDefinition.getView();
             return new FluentLoader<>(entityClass, this).view(view).id(idValue);
@@ -84,9 +84,9 @@ public class ProjectionSupportDataManagerBean extends DataManagerBean {
     public <E extends Entity> E commit(E entity, @Nullable View view) {
         CommitContext context = new CommitContext().addInstanceToCommit(entity, view);
         EntitySet commit = commit(context);
-        if (entity instanceof BaseProjection) {
-            Entity committedEntity = commit.get(((BaseProjection) entity).getOrigin());
-            BaseProjection entityView = EntityProjectionWrapper.wrap(committedEntity, ((BaseProjection) entity).getInterfaceClass());
+        if (entity instanceof Projection) {
+            Entity committedEntity = commit.get(((Projection) entity).getOrigin());
+            Projection entityView = EntityProjectionWrapper.wrap(committedEntity, ((Projection) entity).getInterfaceClass());
             return (E) entityView;
         }
         return commit.get(entity);
@@ -97,16 +97,16 @@ public class ProjectionSupportDataManagerBean extends DataManagerBean {
     public EntitySet commit(CommitContext context) {
 
         Collection<Entity> entitiesToCommit = context.getCommitInstances().stream().map(e -> {
-                    if (e instanceof BaseProjection)
-                        return ((BaseProjection) e).getOrigin();
+                    if (e instanceof Projection)
+                        return ((Projection) e).getOrigin();
                     else return e;
                 }
         ).collect(Collectors.toList());
         context.setCommitInstances(entitiesToCommit);
 
         Collection<Entity> entitiesToRemove = context.getRemoveInstances().stream().map(e -> {
-                    if (e instanceof BaseProjection)
-                        return ((BaseProjection) e).getOrigin();
+                    if (e instanceof Projection)
+                        return ((Projection) e).getOrigin();
                     else return e;
                 }
         ).collect(Collectors.toList());
@@ -120,16 +120,16 @@ public class ProjectionSupportDataManagerBean extends DataManagerBean {
     @Override
     public void remove(Entity entity) {
         Entity entityToRemove =
-                entity instanceof BaseProjection ? ((BaseProjection) entity).getOrigin() : entity;
+                entity instanceof Projection ? ((Projection) entity).getOrigin() : entity;
         super.remove(entityToRemove);
     }
 
 
     @Override
     public <T extends Entity> T create(Class<T> entityClass) {
-        if (BaseProjection.class.isAssignableFrom(entityClass)) {
+        if (Projection.class.isAssignableFrom(entityClass)) {
             ProjectionsConfigurationBean.ProjectionInfo viewInterfaceDefinition
-                    = projectionsConfiguration.getProjectionInfo((Class<BaseProjection>) entityClass);
+                    = projectionsConfiguration.getProjectionInfo((Class<Projection>) entityClass);
             Entity entity = super.create(viewInterfaceDefinition.getEntityClass());
             return (T) EntityProjectionWrapper.wrap(
                     entity, viewInterfaceDefinition.getProjectionInterface());

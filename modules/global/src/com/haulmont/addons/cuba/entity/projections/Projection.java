@@ -13,7 +13,7 @@ import java.io.Serializable;
  *
  */
 @AbstractProjection
-public interface BaseProjection<T extends Entity<K>, K> extends Entity<K>, Serializable {
+public interface Projection<T extends Entity<K>, K> extends Entity<K>, Serializable {
 
     /**
      * Returns underlying entity a.k.a. "unwraps" it. Please note that unwrapped entity will be partially
@@ -27,7 +27,7 @@ public interface BaseProjection<T extends Entity<K>, K> extends Entity<K>, Seria
      * @param <V> Projection Interface class.
      * @return Effective projection interface class.
      */
-    <V extends BaseProjection<T, K>> Class<V> getInterfaceClass();
+    <V extends Projection<T, K>> Class<V> getInterfaceClass();
 
     /**
      * Applies new projection to an underlying entity in a lazy manner. Current implementation may reload entity and
@@ -36,6 +36,6 @@ public interface BaseProjection<T extends Entity<K>, K> extends Entity<K>, Seria
      * @param <V> target view instance class.
      * @return target view instance with the same underlying entity.
      */
-    <V extends BaseProjection<T, K>> V reload(Class<V> targetProjection);
+    <V extends Projection<T, K>> V reload(Class<V> targetProjection);
 
 }

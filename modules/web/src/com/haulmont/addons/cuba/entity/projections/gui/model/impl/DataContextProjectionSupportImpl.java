@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.gui.model.impl;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.addons.cuba.entity.projections.factory.EntityProjectionWrapper;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.gui.model.impl.DataContextImpl;
@@ -34,13 +34,13 @@ public class DataContextProjectionSupportImpl extends DataContextImpl {
             }
         }
 
-        boolean isEntityView = entity instanceof BaseProjection;
+        boolean isEntityView = entity instanceof Projection;
 
         mergedSet.add(entity);
 
         if (managed == null) {
 
-            Entity src = isEntityView ? ((BaseProjection)entity).getOrigin() : entity;
+            Entity src = isEntityView ? ((Projection)entity).getOrigin() : entity;
 
             managed = copyEntity(src);
             entityMap.put(managed.getId(), managed);
@@ -67,8 +67,8 @@ public class DataContextProjectionSupportImpl extends DataContextImpl {
     }
 
     private Entity wrapEntity(Entity srcEntity, Entity dst) {
-        if (srcEntity instanceof BaseProjection) {
-            Class<? extends BaseProjection> interfaceClass = ((BaseProjection)srcEntity).getInterfaceClass();
+        if (srcEntity instanceof Projection) {
+            Class<? extends Projection> interfaceClass = ((Projection)srcEntity).getInterfaceClass();
             return EntityProjectionWrapper.wrap(dst, interfaceClass);
         } else {
             return dst;

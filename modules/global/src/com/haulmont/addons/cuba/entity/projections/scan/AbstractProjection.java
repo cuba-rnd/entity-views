@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Excludes projection interface from scanning. Should be used in case of BaseProjection extension.
+ * Excludes projection interface from scanning. Should be used in case of Projection extension.
  */
 @Documented
 @Target(ElementType.TYPE)

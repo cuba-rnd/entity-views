@@ -1,7 +1,7 @@
 package com.haulmont.addons.cuba.entity.projections.scan;
 
 import com.google.common.collect.ImmutableSet;
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.addons.cuba.entity.projections.factory.EntityProjectionWrapper;
 import com.haulmont.addons.cuba.entity.projections.scan.exception.ProjectionInitException;
 import com.haulmont.chile.core.annotations.MetaProperty;
@@ -39,11 +39,11 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ProjectionsConfigurationBean.class);
 
-    private final Map<Class<? extends BaseProjection>, ProjectionInfo> projectionDefinitions = new ConcurrentHashMap<>();
+    private final Map<Class<? extends Projection>, ProjectionInfo> projectionDefinitions = new ConcurrentHashMap<>();
 
     private final Map<View, ProjectionInfo> definitionsByView = new ConcurrentHashMap<>();
 
-    public ProjectionsConfigurationBean(Map<Class<? extends BaseProjection>, ProjectionInfo> projectionDefinitions) {
+    public ProjectionsConfigurationBean(Map<Class<? extends Projection>, ProjectionInfo> projectionDefinitions) {
         this.projectionDefinitions.putAll(projectionDefinitions);
     }
 
@@ -52,7 +52,7 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
     public void onAppContextInitializedEvent()  {
         buildProjectionSubstitutionChain();
         log.debug("Creating CUBA views for projections");
-        for (Class<? extends BaseProjection> interfaceClass : projectionDefinitions.keySet()) {
+        for (Class<? extends Projection> interfaceClass : projectionDefinitions.keySet()) {
             log.debug("Creating view for {}", interfaceClass);
             ProjectionInfo info = projectionDefinitions.get(interfaceClass);
             View cubaView = composeCubaView(interfaceClass, Collections.emptySet());
@@ -62,12 +62,12 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
     }
 
     @Override
-    public Map<Class<? extends BaseProjection>, ProjectionInfo> getProjectionDefinitions() {
+    public Map<Class<? extends Projection>, ProjectionInfo> getProjectionDefinitions() {
         return Collections.unmodifiableMap(projectionDefinitions);
     }
 
     @Override
-    public ProjectionInfo getProjectionInfo(Class<? extends BaseProjection> interfaceClass) {
+    public ProjectionInfo getProjectionInfo(Class<? extends Projection> interfaceClass) {
         return projectionDefinitions.get(interfaceClass);
     }
 
@@ -78,7 +78,7 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
      * @return Effective projection class.
      */
     @Override
-    public Class<? extends BaseProjection> getEffectiveProjection(Class<? extends BaseProjection> projectionInterface) {
+    public Class<? extends Projection> getEffectiveProjection(Class<? extends Projection> projectionInterface) {
         log.trace("Getting effective projection for {}", projectionInterface);
         ProjectionInfo info = projectionDefinitions.get(projectionInterface);
         if (info == null) {
@@ -102,7 +102,7 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
      * @return CUBA view.
      */
     @Override
-    public View getViewByProjection(Class<? extends BaseProjection> projectionInterface) {
+    public View getViewByProjection(Class<? extends Projection> projectionInterface) {
         ProjectionInfo projectionInfo = projectionDefinitions.get(projectionInterface);
         if (projectionInfo == null) {
             throw new ProjectionInitException(String.format("View %s is not registered", projectionInterface));
@@ -158,11 +158,11 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
      * @return CUBA view definition.
      * @throws ProjectionInitException Throws exception in case of a cyclic reference or bad parent view reference.
      */
-    private View composeCubaView(Class<? extends BaseProjection> projectionInterface, Set<String> visited) throws ProjectionInitException {
+    private View composeCubaView(Class<? extends Projection> projectionInterface, Set<String> visited) throws ProjectionInitException {
 
         log.trace("Creating view for: {}", projectionInterface.getName());
 
-        Class<? extends BaseProjection> effectiveProjection = getEffectiveProjection(projectionInterface);
+        Class<? extends Projection> effectiveProjection = getEffectiveProjection(projectionInterface);
 
         ProjectionInfo projectionInfo = projectionDefinitions.get(effectiveProjection);
         //Preventing cyclic reference
@@ -172,13 +172,13 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
                     , String.join(",", visited)));
         }
 
-        Set<Method> baseProjectionMethods = Arrays.stream(BaseProjection.class.getMethods()).collect(Collectors.toSet());
+        Set<Method> baseProjectionMethods = Arrays.stream(Projection.class.getMethods()).collect(Collectors.toSet());
         //compose view only by getters and exclude default interface methods
         Set<Method> projectionMethods = Arrays.stream(effectiveProjection.getMethods())
                 .filter(ProjectionsConfigurationBean::isMethodCandidate)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        // skip utility methods from BaseProjection
+        // skip utility methods from Projection
         projectionMethods.removeAll(baseProjectionMethods);
 
         View result = new View(projectionInfo.getEntityClass(), projectionInfo.getViewName());
@@ -189,7 +189,7 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
             Class<?> fieldProjection = EntityProjectionWrapper.getMethodReturnType(method);
 
             log.trace("Checking if a method {} refers an entity with a certain view", method.getName());
-            if (BaseProjection.class.isAssignableFrom(fieldProjection)) {
+            if (Projection.class.isAssignableFrom(fieldProjection)) {
 
                 ProjectionInfo refFieldInterfaceInfo = projectionDefinitions.get(fieldProjection);
 
@@ -249,23 +249,23 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
      */
     public static class ProjectionInfo {
 
-        protected final Class<? extends BaseProjection> projectionInterface;
+        protected final Class<? extends Projection> projectionInterface;
 
         protected final Class<Entity> entityClass;
 
         protected View view; //We create views in lazy manner after context is initialized
 
-        protected final Class<? extends BaseProjection> replacedProjection;
+        protected final Class<? extends Projection> replacedProjection;
 
-        protected Class<? extends BaseProjection> replacedBy;
+        protected Class<? extends Projection> replacedBy;
 
-        public ProjectionInfo(@NotNull Class<? extends BaseProjection> projectionInterface, @NotNull Class<Entity> entityClass, Class<? extends BaseProjection> replacedProjection) {
+        public ProjectionInfo(@NotNull Class<? extends Projection> projectionInterface, @NotNull Class<Entity> entityClass, Class<? extends Projection> replacedProjection) {
             this.projectionInterface = projectionInterface;
             this.entityClass = entityClass;
             this.replacedProjection = replacedProjection;
         }
 
-        public Class<? extends BaseProjection> getProjectionInterface() {
+        public Class<? extends Projection> getProjectionInterface() {
             return projectionInterface;
         }
 
@@ -273,15 +273,15 @@ public class ProjectionsConfigurationBean implements ProjectionsConfiguration {
             return entityClass;
         }
 
-        protected Class<? extends BaseProjection> getReplacedProjection() {
+        protected Class<? extends Projection> getReplacedProjection() {
             return replacedProjection;
         }
 
-        protected Class<? extends BaseProjection> getReplacedBy() {
+        protected Class<? extends Projection> getReplacedBy() {
             return replacedBy;
         }
 
-        protected void setReplacedBy(Class<? extends BaseProjection> replacedBy) {
+        protected void setReplacedBy(Class<? extends Projection> replacedBy) {
             this.replacedBy = replacedBy;
         }
 

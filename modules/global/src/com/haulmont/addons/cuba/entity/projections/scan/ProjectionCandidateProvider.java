@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.scan;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
@@ -10,7 +10,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
 /**
- * Scans classpath and looks for projection candidates. Candidates should implement {@link BaseProjection}
+ * Scans classpath and looks for projection candidates. Candidates should implement {@link Projection}
  * and should not be annotated with {@link AbstractProjection}.
  * @see ClassPathScanningCandidateComponentProvider
  */
@@ -20,7 +20,7 @@ public class ProjectionCandidateProvider extends ClassPathScanningCandidateCompo
 
     public ProjectionCandidateProvider(ResourceLoader resourceLoader) {
         super(false);
-        addIncludeFilter(new AssignableTypeFilter(BaseProjection.class));
+        addIncludeFilter(new AssignableTypeFilter(Projection.class));
         addExcludeFilter(new AnnotationTypeFilter(AbstractProjection.class));
         setResourceLoader(resourceLoader);
     }

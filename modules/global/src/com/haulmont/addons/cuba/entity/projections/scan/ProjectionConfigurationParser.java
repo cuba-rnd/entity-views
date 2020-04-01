@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.scan;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.addons.cuba.entity.projections.scan.exception.ProjectionInitException;
 import com.haulmont.cuba.core.entity.Entity;
 import org.apache.commons.lang3.ClassUtils;
@@ -47,15 +47,15 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
 
         log.trace("Scanning projections in packages {}", Arrays.toString(packages));
         try {
-            Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions = scanForProjections(parserContext, packages);
+            Map<Class<? extends Projection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions = scanForProjections(parserContext, packages);
             if (registry.containsBeanDefinition(ProjectionsConfigurationBean.NAME)){
                 log.debug("Adding new projections into existing configuration storage: {}", projectionDefinitions);
                 ConstructorArgumentValues constructorArgumentValues = registry
                         .getBeanDefinition(ProjectionsConfigurationBean.NAME)
                         .getConstructorArgumentValues();
 
-                Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> initMap =
-                        (Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo>) constructorArgumentValues.getArgumentValue(0, Map.class).getValue();
+                Map<Class<? extends Projection>, ProjectionsConfigurationBean.ProjectionInfo> initMap =
+                        (Map<Class<? extends Projection>, ProjectionsConfigurationBean.ProjectionInfo>) constructorArgumentValues.getArgumentValue(0, Map.class).getValue();
                 if (initMap != null) {
                     initMap.putAll(projectionDefinitions);
                 } else {
@@ -81,20 +81,20 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
      * @param packages List of packages to scan.
      * @return Map containing projection classes and DTOs with description for building CUBA views, replacement chains, etc.
      */
-    protected Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> scanForProjections(ParserContext parserContext, String[] packages) {
+    protected Map<Class<? extends Projection>, ProjectionsConfigurationBean.ProjectionInfo> scanForProjections(ParserContext parserContext, String[] packages) {
         XmlReaderContext readerContext = parserContext.getReaderContext();
         ProjectionCandidateProvider provider = new ProjectionCandidateProvider(readerContext.getResourceLoader());
-        Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions = new HashMap<>();
+        Map<Class<? extends Projection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions = new HashMap<>();
         for (String scanPackage : packages) {
             log.trace("Scanning package {}", scanPackage);
             Set<BeanDefinition> projectionDefinitionsCandidates = provider.findCandidateComponents(scanPackage);
             for (BeanDefinition candidate : projectionDefinitionsCandidates) {
 
-                Class<? extends BaseProjection> projectionInterface = extractProjectionInterface(candidate);
+                Class<? extends Projection> projectionInterface = extractProjectionInterface(candidate);
                 Class<Entity> entityClass = extractEntityClass(projectionInterface);
 
                 ReplaceProjection projectionAnnotation = projectionInterface.getAnnotation(ReplaceProjection.class);
-                Class<? extends BaseProjection> replacedProjection = projectionAnnotation != null ? projectionAnnotation.value() : null;
+                Class<? extends Projection> replacedProjection = projectionAnnotation != null ? projectionAnnotation.value() : null;
 
                 projectionDefinitions.put(projectionInterface, new ProjectionsConfigurationBean.ProjectionInfo(projectionInterface, entityClass, replacedProjection));
 
@@ -105,10 +105,10 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
         return projectionDefinitions;
     }
 
-    private Class<? extends BaseProjection> extractProjectionInterface(BeanDefinition beanDefinition) throws ProjectionInitException {
-        Class<? extends BaseProjection> projectionInterface;
+    private Class<? extends Projection> extractProjectionInterface(BeanDefinition beanDefinition) throws ProjectionInitException {
+        Class<? extends Projection> projectionInterface;
         try {
-            projectionInterface = (Class<? extends BaseProjection>)ClassUtils.getClass(beanDefinition.getBeanClassName());
+            projectionInterface = (Class<? extends Projection>)ClassUtils.getClass(beanDefinition.getBeanClassName());
         } catch (ClassNotFoundException e) {
             throw new ProjectionInitException(String.format("Interface was not found for %s", beanDefinition.getBeanClassName()), e);
         }
@@ -116,7 +116,7 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
         return projectionInterface;
     }
 
-    private Class<Entity> extractEntityClass(Class<? extends BaseProjection> projectionInterface) throws ProjectionInitException {
+    private Class<Entity> extractEntityClass(Class<? extends Projection> projectionInterface) throws ProjectionInitException {
         //noinspection unchecked
         List<Class<?>> implementedInterfaces = ClassUtils.getAllInterfaces(projectionInterface);
         implementedInterfaces.add(projectionInterface);
@@ -125,7 +125,7 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
             Set<ParameterizedType> candidateTypes = Arrays.stream(intf.getGenericInterfaces())
                     .filter(type -> type instanceof ParameterizedType)
                     .map(type -> ((ParameterizedType) type))
-                    .filter(parameterizedType -> BaseProjection.class.getTypeName().equals(parameterizedType.getRawType().getTypeName()))
+                    .filter(parameterizedType -> Projection.class.getTypeName().equals(parameterizedType.getRawType().getTypeName()))
                     .collect(Collectors.toSet());
 
             if (candidateTypes.size() == 1) {
@@ -140,7 +140,7 @@ public class ProjectionConfigurationParser implements BeanDefinitionParser {
             }
         }
         throw new ProjectionInitException(String.format("Projection interface %s extends %s interface with no parameter type"
-                ,projectionInterface.getName(), BaseProjection.class.getName()));
+                ,projectionInterface.getName(), Projection.class.getName()));
     }
 
 }

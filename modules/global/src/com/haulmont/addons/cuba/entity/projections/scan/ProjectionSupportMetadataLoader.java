@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.scan;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.chile.core.model.MetaModel;
 import com.haulmont.chile.core.model.impl.MetaClassImpl;
 import com.haulmont.chile.core.model.impl.MetaModelImpl;
@@ -27,13 +27,13 @@ public class ProjectionSupportMetadataLoader extends MetadataLoader {
 
         super.loadMetadata();
 
-        Map<Class<? extends BaseProjection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions
+        Map<Class<? extends Projection>, ProjectionsConfigurationBean.ProjectionInfo> projectionDefinitions
                 = projectionsConfigurationBean.getProjectionDefinitions();
 
 
-        Set<Class<? extends BaseProjection>> interfaceClasses = projectionDefinitions.keySet();
+        Set<Class<? extends Projection>> interfaceClasses = projectionDefinitions.keySet();
 
-        for (Class<? extends BaseProjection> interfaceClass : interfaceClasses) {
+        for (Class<? extends Projection> interfaceClass : interfaceClasses) {
             ProjectionsConfigurationBean.ProjectionInfo info = projectionDefinitions.get(interfaceClass);
             for (MetaModel m : session.getModels()) {
                 MetaModelImpl metaModel = (MetaModelImpl) m;

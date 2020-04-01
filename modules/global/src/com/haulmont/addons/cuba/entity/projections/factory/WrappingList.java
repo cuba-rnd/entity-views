@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.factory;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 import com.haulmont.cuba.core.entity.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * @param <E> entity type.
  * @param <V> projection type.
  */
-public class WrappingList<E extends Entity<K>, V extends BaseProjection<E, K>, K> implements List<V> {
+public class WrappingList<E extends Entity<K>, V extends Projection<E, K>, K> implements List<V> {
 
     private static final Logger log = LoggerFactory.getLogger(WrappingList.class);
 
@@ -88,7 +88,7 @@ public class WrappingList<E extends Entity<K>, V extends BaseProjection<E, K>, K
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        Collection unwrapped = c.stream().map(e -> ((BaseProjection) e).getOrigin()).collect(Collectors.toList());
+        Collection unwrapped = c.stream().map(e -> ((Projection) e).getOrigin()).collect(Collectors.toList());
         return delegate.containsAll(unwrapped);
     }
 
@@ -104,7 +104,7 @@ public class WrappingList<E extends Entity<K>, V extends BaseProjection<E, K>, K
     @Override
     public boolean removeAll(Collection<?> c) {
         Collection unwrapped = c.stream().map(e -> {
-            BaseProjection entityView = (BaseProjection) e;
+            Projection entityView = (Projection) e;
             Entity origin = entityView.getOrigin();
             entityViewsCache.remove(origin);
             return origin;
@@ -114,7 +114,7 @@ public class WrappingList<E extends Entity<K>, V extends BaseProjection<E, K>, K
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        Collection unwrapped = c.stream().map(e -> ((BaseProjection) e).getOrigin()).collect(Collectors.toList());
+        Collection unwrapped = c.stream().map(e -> ((Projection) e).getOrigin()).collect(Collectors.toList());
         Set<E> keysToRemove = new HashSet<>(entityViewsCache.keySet());
         keysToRemove.removeAll(unwrapped);
         keysToRemove.forEach(e -> entityViewsCache.remove(e));
@@ -163,12 +163,12 @@ public class WrappingList<E extends Entity<K>, V extends BaseProjection<E, K>, K
 
     @Override
     public int indexOf(Object o) {
-        return delegate.indexOf(((BaseProjection) o).getOrigin());
+        return delegate.indexOf(((Projection) o).getOrigin());
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        return delegate.lastIndexOf(((BaseProjection) o).getOrigin());
+        return delegate.lastIndexOf(((Projection) o).getOrigin());
     }
 
     @Override

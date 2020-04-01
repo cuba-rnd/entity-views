@@ -35,12 +35,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class BaseProjectionTest {
+public class ProjectionTest {
 
     @ClassRule
     public static final AppTestContainer cont = AppTestContainer.Common.INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(BaseProjectionTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ProjectionTest.class);
 
     private MetadataTools metadataTools;
     private Persistence persistence;

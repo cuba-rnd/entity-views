@@ -19,16 +19,16 @@ import javax.annotation.Nullable;
  * @param <V>
  * @param <K>
  */
-public abstract class BaseProjectionImpl<E extends Entity<K>, V extends BaseProjection<E, K>, K> implements BaseProjection<E, K> {
+public abstract class ProjectionImpl<E extends Entity<K>, V extends Projection<E, K>, K> implements Projection<E, K> {
 
-    protected final Logger log = LoggerFactory.getLogger(BaseProjectionImpl.class);
+    protected final Logger log = LoggerFactory.getLogger(ProjectionImpl.class);
 
     protected E entity;
     private boolean needReload;
     private final Class<V> projectionInterface;
     private View view;
 
-    public BaseProjectionImpl(E entity, Class<V> projectionInterface) {
+    public ProjectionImpl(E entity, Class<V> projectionInterface) {
         this.entity = entity;
         this.projectionInterface = projectionInterface;
         view = AppBeans.get(ProjectionsConfiguration.class).getViewByProjection(projectionInterface);
@@ -47,7 +47,7 @@ public abstract class BaseProjectionImpl<E extends Entity<K>, V extends BaseProj
             log.info("Reloading entity {} using view {}", entity, view);
             DataManager dm = AppBeans.get(DataManager.class);
             E reloaded = dm.reload(entity, view);
-            entity = (reloaded instanceof BaseProjection) ? (E)((BaseProjection) reloaded).getOrigin() : reloaded;
+            entity = (reloaded instanceof Projection) ? (E)((Projection) reloaded).getOrigin() : reloaded;
             needReload = false;
         }
     }
@@ -63,7 +63,7 @@ public abstract class BaseProjectionImpl<E extends Entity<K>, V extends BaseProj
     }
 
     @Override
-    public <U extends BaseProjection<E, K>> U reload(Class<U> targetProjection) {
+    public <U extends Projection<E, K>> U reload(Class<U> targetProjection) {
         if (projectionInterface.isAssignableFrom(targetProjection)) {
             //noinspection unchecked
             return (U) this;

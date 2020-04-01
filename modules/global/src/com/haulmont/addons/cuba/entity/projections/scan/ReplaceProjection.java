@@ -1,6 +1,6 @@
 package com.haulmont.addons.cuba.entity.projections.scan;
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
+import com.haulmont.addons.cuba.entity.projections.Projection;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -17,5 +17,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ReplaceProjection {
-    Class<? extends BaseProjection> value();
+    Class<? extends Projection> value();
 }

@@ -1,8 +1,8 @@
 package com.haulmont.addons.cuba.entity.projections.factory;
 
 
-import com.haulmont.addons.cuba.entity.projections.BaseProjection;
-import com.haulmont.addons.cuba.entity.projections.BaseProjectionImpl;
+import com.haulmont.addons.cuba.entity.projections.Projection;
+import com.haulmont.addons.cuba.entity.projections.ProjectionImpl;
 import com.haulmont.addons.cuba.entity.projections.scan.ProjectionsConfiguration;
 import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.cuba.core.entity.Entity;
@@ -49,12 +49,12 @@ public class EntityProjectionWrapper {
      * @return Proxy that implements projection interface of class <code>V</code>
      */
     @SuppressWarnings("unchecked")
-    public static <E extends Entity<K>, V extends BaseProjection<E, K>, K> V wrap(E entity, Class<V> projectionInterface) {
+    public static <E extends Entity<K>, V extends Projection<E, K>, K> V wrap(E entity, Class<V> projectionInterface) {
         if (entity == null) {
             return null;
         }
         log.trace("Wrapping entity: {} to projection: {}", entity, projectionInterface);
-        Class<? extends BaseProjection> effectiveProjection = AppBeans.get(ProjectionsConfiguration.class).getEffectiveProjection(projectionInterface);
+        Class<? extends Projection> effectiveProjection = AppBeans.get(ProjectionsConfiguration.class).getEffectiveProjection(projectionInterface);
         log.trace("Effective projection: {}", effectiveProjection);
 
         try {
@@ -66,9 +66,9 @@ public class EntityProjectionWrapper {
         }
     }
 
-    public static Class<?> getProjectionClass(Class<? extends BaseProjection> effectiveProjection) throws NotFoundException, CannotCompileException, IOException {
-        if (effectiveProjection == null || !BaseProjection.class.isAssignableFrom(effectiveProjection)) {
-            throw new IllegalArgumentException(String.format("Projection interface must not be null and should implement %s", BaseProjection.class.getName()));
+    public static Class<?> getProjectionClass(Class<? extends Projection> effectiveProjection) throws NotFoundException, CannotCompileException, IOException {
+        if (effectiveProjection == null || !Projection.class.isAssignableFrom(effectiveProjection)) {
+            throw new IllegalArgumentException(String.format("Projection interface must not be null and should implement %s", Projection.class.getName()));
         }
         String wrapperName = createWrapperClassName(effectiveProjection);
         Class<?> aClass = null;
@@ -87,10 +87,10 @@ public class EntityProjectionWrapper {
         return String.format("%sWrapperImpl", effectiveView.getName());
     }
 
-    private static <E extends Entity<K>, V extends BaseProjection<E, K>, K> Class<?> createWrapperImplementation(Class<V> viewInterface, String wrapperName) throws NotFoundException, CannotCompileException, IOException {
+    private static <E extends Entity<K>, V extends Projection<E, K>, K> Class<?> createWrapperImplementation(Class<V> viewInterface, String wrapperName) throws NotFoundException, CannotCompileException, IOException {
         log.info("Creating dynamic implementation {} for {}", wrapperName, viewInterface);
         ClassPool pool = ClassPool.getDefault();
-        CtClass baseClass = pool.get(BaseProjectionImpl.class.getName());
+        CtClass baseClass = pool.get(ProjectionImpl.class.getName());
         CtClass wrappingEntityClass = pool.get(getProjectionEntityClassName(viewInterface));
         CtClass viewIf = pool.get(viewInterface.getName());
 
@@ -119,9 +119,9 @@ public class EntityProjectionWrapper {
         return aClass;
     }
 
-    private static <E extends Entity<K>, V extends BaseProjection<E, K>, K> List<Method> getEntityProjectionMethods(Class<V> viewInterface) {
+    private static <E extends Entity<K>, V extends Projection<E, K>, K> List<Method> getEntityProjectionMethods(Class<V> viewInterface) {
         return Arrays.stream(viewInterface.getMethods())
-                .filter(method -> MethodUtils.getMatchingMethod(BaseProjectionImpl.class, method.getName(), method.getParameterTypes()) == null
+                .filter(method -> MethodUtils.getMatchingMethod(ProjectionImpl.class, method.getName(), method.getParameterTypes()) == null
                         && !method.isDefault())
                 .collect(Collectors.toList());
     }
@@ -160,8 +160,8 @@ public class EntityProjectionWrapper {
     }
 
     private static String createParameterDelegateString(int parameterNum, Class<?> parameterType) {
-        if (BaseProjection.class.isAssignableFrom(parameterType)) {
-            String paramTypeName = getProjectionEntityClassName((Class<? extends BaseProjection>)parameterType);
+        if (Projection.class.isAssignableFrom(parameterType)) {
+            String paramTypeName = getProjectionEntityClassName((Class<? extends Projection>)parameterType);
             return "("+paramTypeName+")($"+parameterNum+".getOrigin())";
         } else {
             return "$"+parameterNum;
@@ -172,7 +172,7 @@ public class EntityProjectionWrapper {
         if (Collection.class.isAssignableFrom(returnType)) {
             Class<?> collectionGenericType = getMethodReturnType(m);
             return "\nreturn new "+ WrappingList.class.getName()+"("+body+", " + collectionGenericType.getName() + ".class);";
-        } else if (BaseProjection.class.isAssignableFrom(returnType)) {
+        } else if (Projection.class.isAssignableFrom(returnType)) {
             return "\nreturn " + EntityProjectionWrapper.class.getName() + ".wrap("+body+", " + returnTypeName + ".class);";
         } else if (!returnType.equals(Void.TYPE)) {
             return "\nreturn "+body+";";
@@ -190,7 +190,7 @@ public class EntityProjectionWrapper {
             Set<ParameterizedType> candidateTypes = Arrays.stream(intf.getGenericInterfaces())
                     .filter(type -> type instanceof ParameterizedType)
                     .map(type -> ((ParameterizedType) type))
-                    .filter(parameterizedType -> BaseProjection.class.getName().equals(parameterizedType.getRawType().getTypeName()))
+                    .filter(parameterizedType -> Projection.class.getName().equals(parameterizedType.getRawType().getTypeName()))
                     .collect(Collectors.toSet());
 
             if (candidateTypes.size() == 1) {
@@ -219,8 +219,8 @@ public class EntityProjectionWrapper {
                 List<Class<?>> collectionTypes = Arrays.stream(type.getActualTypeArguments())
                         .map(t -> ReflectionHelper.getClass(t.getTypeName())).collect(Collectors.toList());
                 //TODO make this code a bit more accurate
-                if (collectionTypes.stream().anyMatch(BaseProjection.class::isAssignableFrom)) {
-                    return collectionTypes.stream().filter(BaseProjection.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
+                if (collectionTypes.stream().anyMatch(Projection.class::isAssignableFrom)) {
+                    return collectionTypes.stream().filter(Projection.class::isAssignableFrom).findFirst().orElseThrow(RuntimeException::new);
                 } else {
                     return collectionTypes.stream().findFirst().orElseThrow(RuntimeException::new);
                 }
